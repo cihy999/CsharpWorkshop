@@ -24,6 +24,11 @@ globs: ["**/*.cs"]
    - 名稱必須以 `I` 開頭。
    - 例如: `interface ILogger`
 
+4. **屬性與欄位 (Property & Field)**:
+   - **屬性 (Property)**: 使用 `PascalCase`。例如: `public string FirstName { get; set; }`
+   - **private 欄位**: 使用 `_camelCase` (底線加小寫開頭)。例如: `private int _studentId;`
+   - **public / protected 欄位**: 使用 `PascalCase` (但通常建議改用屬性)。
+
 ## 語法偏好 (Syntax Preference)
 
 - **變數宣告**: 當右側型別明確時 (例如有 `new` 關鍵字)，請優先使用 `var`。
