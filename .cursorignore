@@ -1,0 +1,49 @@
+#
+# Cursor 忽略文件設定說明
+# 
+# 官方文件參考：https://docs.cursor.com/context/ignore-files
+#
+# .cursorignore 檔案：
+#   完全封鎖。AI 看不到、搜不到、也無法回答相關問題。
+#   適用於：敏感資料 (API keys, 憑證)、機密文件。
+#
+# .cursorindexingignore 檔案：
+#   AI 預設「搜不到」這些檔案，不會主動引用。
+#   但如果您「手動開啟」或「明確 @ 提到」該檔案，AI 仍然可以讀取並回答。
+#   適用於：大型自動生成檔、文件檔、或不想干擾全域搜尋的舊程式碼。
+#
+
+# 排除特定檔案類型（二進位與編譯檔案）
+*.dll
+*.exe
+*.pdb
+*.suo
+*.user
+*.cache
+*.nupkg
+*.apk
+*.aab
+
+# 版本控制
+**/.svn
+**/.git
+
+# 編輯器暫存與設定
+**/.idea
+**/.vs
+# 注意：我們通常保留 .vscode 讓 AI 讀取 launch.json 以了解如何執行專案
+
+# C# / .NET 編譯輸出 (AI 最不需要看到的雜訊)
+**/bin
+**/obj
+**/TestResults
+
+# NuGet 套件 (通常看 .csproj 即可，不需要看套件原始碼)
+**/packages
+**/node_modules
+
+# 其他常見雜訊
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
