@@ -16,12 +16,12 @@ globs: ["**/*.cs"]
    - 使用 `PascalCase` (大寫開頭)。
    - 例如: `class Student`, `void CalculateScore()`
 
-2. **變數與參數 (Variable & Parameter)**:
+2. **區域變數與參數 (Variable & Parameter)**:
    - 使用 `camelCase` (小寫開頭)。
    - 例如: `int studentId`, `string firstName`
 
 3. **介面 (Interface)**:
-   - 名稱必須以 `I` 開頭。
+   - 名稱必須以 `I` 開頭並使用 `PascalCase`。
    - 例如: `interface ILogger`
 
 4. **屬性與欄位 (Property & Field)**:
