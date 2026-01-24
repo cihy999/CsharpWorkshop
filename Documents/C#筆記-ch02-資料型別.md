@@ -141,6 +141,55 @@ internal class Program
 }
 ```
 
+## 字串
+
+### 字串合併
+
+程式碼範例：
+
+```csharp
+/// <summary>
+/// 字串合併
+/// </summary>
+static void ConcatenateString() 
+{
+    string str1 = "Antigravity";
+    string str2 = str1 + "是一個很棒的助理！" + 100 + "分";
+    Console.WriteLine(str2); // Antigravity是一個很棒的助理！100分
+}
+```
+
+### 字串格式化
+
+程式碼範例：
+
+```csharp
+/// <summary>
+/// 字串格式化
+/// </summary>
+static void FormatString()
+{
+    string str1 = string.Format("{0}是一個很棒的助理！{1}分", "Antigravity", 100);
+    Console.WriteLine(str1);
+}
+```
+
+### 字串插值
+
+程式碼範例：
+
+```csharp
+/// <summary>
+/// 字串插值
+/// </summary>
+static void InterpolateString() 
+{
+    string name = "Antigravity";
+    int score = 100;
+    Console.WriteLine($"{name}是一個很棒的助理！{score}分");
+}
+```
+
 ## 專有名詞
 
 - **識別字(Identifier)**：讓使用者定義一個方法、變數、類別等名稱。
