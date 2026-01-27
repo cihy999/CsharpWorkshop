@@ -190,6 +190,74 @@ static void InterpolateString()
 }
 ```
 
+## 資料型別轉換
+
+### 隱含轉換(Implicit Conversion)
+
+1. 兩者資料型別相容
+2. 目的資料型別比原始資料型別範圍大時，比如int轉換為long
+3. 參考型別(Reference Type)轉換則是將衍生類別轉換成基底類別，一律使用隱含轉換
+
+> 注意 int、uint、long 資料型別轉換為 float 或是 double 時，有可能會使轉換的結果產生不精確。
+>
+> **原因：浮點數的記憶體結構 (IEEE 754)**
+> 浮點數並非精確儲存每一個位元，而是採用類似「科學記號法」的方式儲存，分為三個部分：
+>
+> 1. **正負號 (Sign bit)**：決定正負。
+> 2. **指數 (Exponent)**：決定數值的「大小範圍」。
+> 3. **尾數 (Mantissa/Significand)**：決定數值的「精確度」。
+>
+> **為什麼會不精確？**
+> 以 `float` 為例，其尾數空間僅約 23~24 bits（約 7 位有效數字）。
+> 當一個 32 bits 的 `int` 數值超過了 `float` 尾數能表達的範圍時，多出來的位元就會被捨入 (Rounding)，導致精確度喪失。
+
+| 型別         | 總位元  | 正負號 (Sign) | 指數 (Exponent) | 尾數 (Mantissa) |
+| :----------- | :------ | :------------ | :-------------- | :-------------- |
+| **`float`**  | 32 bits | 1 bit         | 8 bits          | 23 bits         |
+| **`double`** | 64 bits | 1 bit         | 11 bits         | 52 bits         |
+
+### 明確轉換(Explicit Conversion)
+
+型態轉換(Type Cast)的方式強迫資料換成別的型別，可能會有資料遺失、例外問題。
+
+程式碼範例：
+
+```csharp
+static void DoConversion() 
+{ 
+    int i = 0;
+    long l = 0;
+    float f = 0;
+    double d = 0;
+
+    i = 1;
+    f = i;
+    Console.WriteLine($"i = {i}, f = i => {f}");
+
+    i = 1;
+    d = i;
+    Console.WriteLine($"i = {i}, d = i => {d}");
+
+    l = 2L;
+    d = l;
+    Console.WriteLine($"l = {l}, d = l => {l}");
+
+    // double(浮點數)轉換成int(整數)，小數部分會遺失
+    d = 4.38974567569;
+    i = (int)d;
+    Console.WriteLine($"d = {d}, i = d => {i}");
+    d = 0.1234578;
+    l = (long)d;
+    Console.WriteLine($"d = {d}, l = d => {l}");
+
+    // int轉換成byte，因為縮小，所以會像順時針轉圈的效果(257 -> 2)
+    byte b;
+    i = 257;
+    b = (byte)i;
+    Console.WriteLine($"i = {i}, b = i => {b}");
+}
+```
+
 ## 專有名詞
 
 - **識別字(Identifier)**：讓使用者定義一個方法、變數、類別等名稱。
