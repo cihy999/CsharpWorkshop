@@ -4,9 +4,9 @@ namespace Ch02_Types
 {
     internal class Program
     {
-        static void Main(string[] args)
+		static void Main(string[] args)
         {
-			DoConversion();
+			DemonstrateStruct();
 		}
 
         static void DeclareVariable() 
@@ -60,6 +60,42 @@ namespace Ch02_Types
 			i = 257;
 			b = (byte)i;
 			Console.WriteLine($"i = {i}, b = i => {b}");
+		}
+
+		public enum WeekDays : int
+		{
+			Monday = 1,
+			Tuesday = 2,
+			Wednesday = 3,
+			Thursday = 4,
+			Friday = 5,
+			Saturday = 6,
+			Sunday = 7
+		}
+
+		static void UseEnumeration()
+		{
+			Console.WriteLine($"星期三列舉常數值：{(int)WeekDays.Wednesday}");
+			Console.WriteLine($"星期五列舉常數值：{(int)WeekDays.Friday}");
+		}
+
+		// 定義 Product 產品結構資料型別
+		private struct Product 
+		{
+			public string No, Name;
+			public int Price;
+		}
+
+		static void DemonstrateStruct()
+		{
+			Product ps5_slim;
+			ps5_slim.No = "CFI-2018B01";
+			ps5_slim.Name = "PlayStation PS5 Slim 數位版 輕薄型主機";
+			ps5_slim.Price = 14580;
+
+			Console.WriteLine($"產品編號：{ps5_slim.No}");
+			Console.WriteLine($"產品名稱：{ps5_slim.Name}");
+			Console.WriteLine($"產品單價：{ps5_slim.Price}");
 		}
 	}
 }
