@@ -128,3 +128,40 @@ internal class Program
     }
 }
 ```
+
+## 三元運算子
+
+程式碼範例：
+
+```csharp
+static void DoTenaryOperator()
+{
+    int n1, n2, n3;
+    int max;
+
+    Console.Write("1. 請輸入第1個數值：");
+    if (!int.TryParse(Console.ReadLine(), out n1))
+    {
+        Console.WriteLine("\n輸入錯誤！");
+        return;
+    }
+
+    Console.Write("2. 請輸入第2個數值：");
+    if (!int.TryParse(Console.ReadLine(), out n2))
+    {
+        Console.WriteLine("\n輸入錯誤！");
+        return;
+    }
+
+    Console.Write("3. 請輸入第3個數值：");
+    if (!int.TryParse(Console.ReadLine(), out n3))
+    {
+        Console.WriteLine("\n輸入錯誤！");
+        return;
+    }
+
+    max = n1 > n2 ? (n1 > n3 ? n2 : n3) : (n2 > n3 ? n2 : n3);
+
+    Console.WriteLine($"\n=== {n1}, {n2}, {n3} 中最大的數值：{max}");
+}
+```
