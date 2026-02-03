@@ -34,3 +34,86 @@ globs: ["**/*.cs"]
 - **變數宣告**: 當右側型別明確時 (例如有 `new` 關鍵字)，請優先使用 `var`。
   - Yes: `var students = new List<Student>();`
   - No: `List<Student> students = new List<Student>();`
+
+## 成員排序慣例 (Member Ordering)
+
+類別成員應按照以下順序排列，以提升可讀性與一致性。
+
+### 1. 依成員類型排序 (By Member Type)
+
+| 順序 | 成員類型            | 說明                           |
+| ---- | ------------------- | ------------------------------ |
+| 1    | **Constants**       | `const` 常數                   |
+| 2    | **Static Fields**   | 靜態欄位                       |
+| 3    | **Instance Fields** | 實例欄位                       |
+| 4    | **Constructors**    | 建構子                         |
+| 5    | **Finalizers**      | 解構子 (較少使用)              |
+| 6    | **Delegates**       | 委派定義                       |
+| 7    | **Events**          | 事件                           |
+| 8    | **Properties**      | 屬性 (靜態優先於實例)          |
+| 9    | **Indexers**        | 索引子                         |
+| 10   | **Methods**         | 方法 (靜態優先於實例)          |
+| 11   | **Nested Types**    | 巢狀類型 (enum, struct, class) |
+
+### 2. 依存取修飾詞排序 (By Access Modifier)
+
+在同一類型的成員中，依公開程度由高到低排列：
+
+| 順序 | 修飾詞      |
+| ---- | ----------- |
+| 1    | `public`    |
+| 2    | `internal`  |
+| 3    | `protected` |
+| 4    | `private`   |
+
+### 3. 靜態 vs 實例 (Static vs Instance)
+
+在同一存取層級內，**靜態成員優先於實例成員**。
+
+### 4. 唯讀優先 (Readonly First)
+
+在同一類別的欄位中，`readonly` 欄位應排在可變欄位之前。
+
+### 範例 (Example)
+
+```csharp
+public class Player
+{
+    // ===== Constants =====
+    public const int MaxLevel = 100;
+    private const int DefaultHealth = 100;
+
+    // ===== Static Fields =====
+    private static int _playerCount;
+
+    // ===== Instance Fields (readonly first) =====
+    private readonly int _id;
+    private string _name;
+
+    // ===== Constructors =====
+    public Player(int id, string name)
+    {
+        _id = id;
+        _name = name;
+    }
+
+    // ===== Events =====
+    public event EventHandler<int> OnDamaged;
+
+    // ===== Properties (static first) =====
+    public static int PlayerCount => _playerCount;
+    public int Id => _id;
+    public string Name { get; set; }
+
+    // ===== Methods (public -> private, static -> instance) =====
+    public static void ResetCount() => _playerCount = 0;
+
+    public void TakeDamage(int amount)
+    {
+        _health -= amount;
+        OnDamaged?.Invoke(this, amount);
+    }
+
+    private void LogStatus() => Console.WriteLine($"{_name}: HP={_health}");
+}
+```
