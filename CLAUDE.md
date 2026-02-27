@@ -1,8 +1,4 @@
----
-description: 專案開發工作流程、代碼風格與指令規範
-alwaysApply: true
----
-## Workflow Orchestration
+# Workflow Orchestration
 
 ### 1. Plan Node Default
 
