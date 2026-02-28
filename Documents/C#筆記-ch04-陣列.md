@@ -111,3 +111,41 @@ Member[] blackPinkMembers =
    - 對於 `class` (參考型別)： 當你使用 `new` 時，它確實在 Heap (堆積) 配置空間，並回傳物件的手指 (Reference / 指標) 到 Stack 給變數。
    - 對於 `struct` (實值型別)： 雖然你用了 `new`，但 C# 知道它是實值型別，它依然會被直接保留在 Stack (堆疊) 上（或者是作為陣列 / 類別的一部分，存放在外部結構所在的區域中）。
    - 總結： 對 `struct` 使用 `new`，並不會把它變成記憶體配置在 Heap 的物件。這只是在要求編譯器把它的內容好好「歸零/初始化」而已！
+
+## foreach 陳述式
+
+程式碼範例：
+
+```csharp
+static public void AverageHeight() 
+{
+    Console.Write("請輸入總人數：");
+
+    int num = 0;
+    if (!int.TryParse(Console.ReadLine(), out num))
+    {
+        Console.WriteLine("\n請輸入整數！");
+        return;
+    }
+
+    double[] heights = new double[num];
+    for (int i = 0; i < heights.Length; i++)
+    {
+        Console.Write($"\n請輸入第{i+1}位身高：");
+
+        double h = 0;
+        if (double.TryParse(Console.ReadLine(), out h))
+        {
+            heights[i] = h;
+        }
+    }
+
+    double sum = 0, avg = 0;
+    foreach (double h in heights) 
+    {
+        sum += h;
+    }
+    avg = sum / heights.Length;
+    Console.WriteLine($"\n=== {num} 位平均身高：{avg:00.00} ===");
+}
+```

@@ -33,5 +33,36 @@ namespace Ch04_Array
 				Console.WriteLine($"{blackPinkMembers[i].Name}\t{blackPinkMembers[i].Age}");
 			}
 		}
+		static public void AverageHeight() 
+		{
+			Console.Write("請輸入總人數：");
+
+			int num = 0;
+			if (!int.TryParse(Console.ReadLine(), out num))
+			{
+				Console.WriteLine("\n請輸入整數！");
+				return;
+			}
+
+			double[] heights = new double[num];
+			for (int i = 0; i < heights.Length; i++)
+			{
+				Console.Write($"\n請輸入第{i+1}位身高：");
+
+				double h = 0;
+				if (double.TryParse(Console.ReadLine(), out h))
+				{
+					heights[i] = h;
+				}
+			}
+
+			double sum = 0, avg = 0;
+			foreach (double h in heights) 
+			{
+				sum += h;
+			}
+			avg = sum / heights.Length;
+			Console.WriteLine($"\n=== {num} 位平均身高：{avg:00.00} ===");
+		}
 	}
 }
