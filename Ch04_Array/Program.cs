@@ -1,4 +1,6 @@
-﻿using System.Xml.Linq;
+﻿using System.Collections;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
 
 namespace Ch04_Array
 {
@@ -12,7 +14,7 @@ namespace Ch04_Array
 
         static void Main(string[] args)
         {
-			ShowBlackPinkMember();
+			SortAndShowBlackPinkMember();
 		}
 
 		static public void ShowBlackPinkMember()
@@ -33,6 +35,61 @@ namespace Ch04_Array
 				Console.WriteLine($"{blackPinkMembers[i].Name}\t{blackPinkMembers[i].Age}");
 			}
 		}
+
+		static public void SortAndShowBlackPinkMember()
+		{
+			Member[] blackPinkMembers =
+			[
+				new() { Name = "Jisoo", Age = 31 },
+				new() { Name = "Jennie", Age = 30 },
+				new() { Name = "Rosé", Age = 29 },
+				new() { Name = "Lisa", Age = 28 }
+			];
+
+			// 遞減排序(使用匿名方法來比較)
+			Array.Sort(blackPinkMembers, (x, y) => 
+			{
+				// 當前方的 x 比後方的 y 還大，就回傳 -1，讓 x 排到前面
+				if (x.Age > y.Age) return -1;
+				// 當前方的 x 比後方的 y 還小，就回傳 1，讓 x 排到後面
+				else if (x.Age < y.Age) return 1;
+				// 如果一樣大，回傳 0，維持原本的相對順序
+				return 0;
+			});
+			Console.WriteLine("== BLACKPINK 成員(遞減排序) ==\n");
+			Console.WriteLine("姓名\t年齡");
+			Console.WriteLine("==========");
+			foreach (var m in blackPinkMembers)
+			{
+				Console.WriteLine($"{m.Name}\t{m.Age}");
+			}
+
+			Console.WriteLine("");
+
+			// 遞增排序
+			// 使用int.CompareTo()可以縮減實作行數
+			Array.Sort(blackPinkMembers, (x, y) => x.Age.CompareTo(y.Age));
+			Console.WriteLine("== BLACKPINK 成員(遞增排序) ==\n");
+			Console.WriteLine("姓名\t年齡");
+			Console.WriteLine("==========");
+			foreach (var m in blackPinkMembers)
+			{
+				Console.WriteLine($"{m.Name}\t{m.Age}");
+			}
+
+			Console.WriteLine("");
+
+			// 自訂排序
+			Array.Sort(blackPinkMembers, CompareBlackPinkMember);
+			Console.WriteLine("== BLACKPINK 成員(自訂排序) ==\n");
+			Console.WriteLine("姓名\t年齡");
+			Console.WriteLine("==========");
+			foreach (var m in blackPinkMembers)
+			{
+				Console.WriteLine($"{m.Name}\t{m.Age}");
+			}
+		}
+
 		static public void AverageHeight() 
 		{
 			Console.Write("請輸入總人數：");
@@ -63,6 +120,35 @@ namespace Ch04_Array
 			}
 			avg = sum / heights.Length;
 			Console.WriteLine($"\n=== {num} 位平均身高：{avg:00.00} ===");
+		}
+
+		static private int CompareBlackPinkMember(Member x, Member y) 
+		{
+			int result = 0;
+
+			// 1.排序名字
+			if (string.IsNullOrEmpty(x.Name) && string.IsNullOrEmpty(y.Name))
+				result = 0;
+			else if (string.IsNullOrEmpty(x.Name))
+				result = -1;
+			else if (string.IsNullOrEmpty(y.Name))
+				result = 1;
+			else
+			{
+				// 使用字串內建的比較，可以按字母排序(看字元編碼的數字大小)
+				//result = x.Name.CompareTo(y.Name);
+				// 使用字串比較，自選規則: 忽略大小寫
+				result = string.Compare(x.Name, y.Name, StringComparison.CurrentCultureIgnoreCase);
+				// 名字長度比較
+				//result = x.Name.Length.CompareTo(y.Name.Length);
+			}
+
+			if (result != 0) return result;
+
+			// 2.若名稱相同，排序年齡
+			result = x.Age.CompareTo(y.Age);
+
+			return result;
 		}
 	}
 }
