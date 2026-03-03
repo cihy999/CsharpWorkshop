@@ -238,3 +238,44 @@ static private int CompareBlackPinkMember(Member x, Member y)
     return result;
 }
 ```
+
+## 不規則陣列(Jagged Array)
+
+```csharp
+static public void ShowJaggedArray() 
+{ 
+    // 建立不規則陣列
+    double[][] amt = new double[3][];
+    amt[0] = new double[] { 1100, 2200, 3300 };
+    amt[1] = new double[] { 1500, 2500 };
+    amt[2] = new double[] { 1000, 2000, 3000, 4000 };
+    string[] companyNames = new string[] { "台北", "台中", "高雄" };
+    string[] parts = new string[] { "第一處", "第二處", "第三處", "第四處" };
+    double[] sums = new double[] { 0.0, 0.0, 0.0 };
+    double total = 0;
+
+    Console.WriteLine($"\t{parts[0]}\t{parts[1]}\t{parts[2]}\t{parts[3]}   (單位：千元)");
+    for (int i = 0; i < amt.Length; i++)
+    {
+        Console.Write($"{companyNames[i]}");
+        for (int j = 0; j < amt[i].Length; j++)
+        {
+            Console.Write($"\t{amt[i][j]}");
+            sums[i] += amt[i][j];
+        }
+        total += sums[i] * 1000;
+
+        Console.WriteLine();
+    }
+
+    Console.WriteLine();
+
+    for (int n = 0; n < sums.Length; n++)
+    {
+        sums[n] *= 1000;
+        Console.WriteLine($"{companyNames[n]}分公司營業額：{sums[n]:c}\t營業率：{sums[n]/total:p}");
+    }
+
+    Console.WriteLine($"總營業額：{total:c}元");
+}
+```
