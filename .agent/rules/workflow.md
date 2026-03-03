@@ -20,7 +20,7 @@ trigger: always_on
 
 ### 3. Self-Improvement Loop
 
-* After ANY correction from the user: update `Saved\tasks\lessons.md` with the pattern
+* After ANY correction from the user: update `ai_workspace\tasks\lessons.md` with the pattern
 * Write rules for yourself that prevent the same mistake
 * Ruthlessly iterate on these lessons until mistake rate drops
 * Review lessons at session start for relevant project
@@ -49,12 +49,12 @@ trigger: always_on
 
 ## Task Management
 
-1. **Plan First**: Write plan to `Saved\tasks\{任務名稱}_{日期}.md` with checkable items
+1. **Plan First**: Write plan to `ai_workspace\tasks\{任務名稱}_{日期}.md` with checkable items
 2. **Verify Plan**: Check in before starting implementation
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `Saved\tasks\{任務名稱}_{日期}.md`
-6. **Capture Lessons**: Update `Saved\tasks\lessons.md` after corrections
+5. **Document Results**: Add review section to `ai_workspace\tasks\{任務名稱}_{日期}.md`
+6. **Capture Lessons**: Update `ai_workspace\tasks\lessons.md` after corrections
 
 ## Core Principles
 
