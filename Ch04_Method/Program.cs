@@ -20,15 +20,89 @@
 		}
 	}
 
+	internal class SampleMethod 
+	{
+		public static void ShowCallValue() 
+		{
+			Console.WriteLine("===== Call by Value 傳值呼叫 =====");
+
+			int a = 50, b = 100;
+			Console.WriteLine($"1. 呼叫敘述，未進入方法前\t\t: a={a}, b={b}");
+
+			CallValue(a, b);
+
+			Console.WriteLine($"4. 呼叫敘述，離開方法回到原處時\t\t: a={a}, b={b}");
+		}
+
+		public static void ShowCallReference()
+		{
+			Console.WriteLine("===== Call by Reference 參考呼叫 =====");
+
+			int a = 50, b = 100;
+			Console.WriteLine($"1. 呼叫敘述，未進入方法前\t\t: a={a}, b={b}");
+
+			CallReference(ref a, ref b);
+
+			Console.WriteLine($"4. 呼叫敘述，離開方法回到原處時\t\t: a={a}, b={b}");
+		}
+
+		public static void ShowOuputParameter()
+		{
+			Console.WriteLine("===== Call Out 傳出參數 =====");
+
+			Console.WriteLine($"1. 呼叫敘述，未進入方法前，未初始化 a、b");
+
+			CallOut(out int a, out int b);
+
+			Console.WriteLine($"4. 呼叫敘述，離開方法回到原處時\t\t: a={a}, b={b}");
+		}
+
+		private static void CallValue(int x, int y)
+		{
+			x = 33;
+			y = 66;
+			Console.WriteLine($"2. 方法內、交換前\t\t\t: x={x}, y={y}");
+
+			int temp = x;
+			x = y;
+			y = temp;
+			Console.WriteLine($"3. 方法內、交換後\t\t\t: x={x}, y={y}");
+		}
+
+		private static void CallReference(ref int x, ref int y)
+		{
+			x = 33;
+			y = 66;
+			Console.WriteLine($"2. 方法內、交換前\t\t\t: x={x}, y={y}");
+
+			int temp = x;
+			x = y;
+			y = temp;
+			Console.WriteLine($"3. 方法內、交換後\t\t\t: x={x}, y={y}");
+		}
+
+		private static void CallOut(out int x, out int y)
+		{
+			x = 33;
+			y = 66;
+			Console.WriteLine($"2. 方法內、交換前\t\t\t: x={x}, y={y}");
+
+			int temp = x;
+			x = y;
+			y = temp;
+			Console.WriteLine($"3. 方法內、交換後\t\t\t: x={x}, y={y}");
+		}
+	}
+
     internal class Program
     {
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="args">陣列都是使用 Call by Reference，但可以省略 ref</param>
         static void Main(string[] args)
         {
-			LoginProcess.Login("Jake", true);
-			LoginProcess.Login("Kelly", false);
-
-			LoginProcess process = new LoginProcess();
-			process.LoginByUser("Louis", true);
+			SampleMethod.ShowOuputParameter();
 		}
 	}
 }
