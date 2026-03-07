@@ -279,3 +279,105 @@ static public void ShowJaggedArray()
     Console.WriteLine($"總營業額：{total:c}元");
 }
 ```
+
+# C# 陣列測驗 (Ch04)
+
+準備好接受挑戰了嗎？來看看你對剛剛這些觀念的熟悉程度！我根據你的筆記和程式碼設計了三道題目，請試著回答看看（**先不要偷看答案喔，直接回覆你的想法即可**）：
+
+## 題目一：🤔 邏輯選擇題 (Multiple Choice)
+
+**主題：關於 `struct` 與陣列的記憶體配置**
+
+在你的筆記中提到了使用 `new()` 來初始化 `struct Member`，例如：
+
+```csharp
+Member[] blackPinkMembers = new Member[4]
+{
+    new() { Name = "Jisoo", Age = 31 },
+    // ...略
+};
+```
+
+請問在 C# 中，對 `struct`（實值型別）使用 `new` 關鍵字，背後代表的真實意義是什麼？
+
+- **(A)** 將該 `struct` 轉換為參考型別 (Reference Type)，並像 `class` 一樣在 Heap (堆積) 中分配獨立的記憶體。
+- **(B)** 呼叫該 `struct` 的建構子將所有欄位初始化為預設值，且記憶體依然保留在 Stack (堆疊) 上（或隨著陣列連續分配）。
+- **(C)** `new` 只是編譯器的語法糖，實際上它完全不做事，如果你沒手動給值，欄位會處於「未賦值 (Unassigned)」的報錯狀態。
+- **(D)** 為了支援 C# 12 的集合表達式 `[]` 所做的妥協，只有在陣列裡才需要寫 `new`。
+
+## 題目一作答
+
+**(B)** 呼叫該 `struct` 的建構子將所有欄位初始化為預設值，且記憶體依然保留在 Stack (堆疊) 上（或隨著陣列連續分配）。
+
+---
+
+## 題目二：🔍 程式碼填空 (Code Completion)
+
+**主題：陣列的自訂排序邏輯**
+
+在你的 `Program.cs` 的 `SortAndShowBlackPinkMember` 方法中，你使用了匿名方法（Lambda）來對 `blackPinkMembers` 陣列進行**遞減排序**（年齡數字大的排在前面）。
+請觀察下方的程式碼，並告訴我 `(1)` 與 `(2)` 的空格應該填入什麼數字，才能達到「遞減」的正確效果：
+
+```csharp
+Array.Sort(blackPinkMembers, (x, y) => 
+{
+    // 當前方的 x 比後方的 y 還大，要讓 x 排到前面
+    if (x.Age > y.Age) return ____(1)____; 
+
+    // 當前方的 x 比後方的 y 還小，要讓 x 排到後面
+    else if (x.Age < y.Age) return ____(2)____; 
+
+    // 如果一樣大，維持原本相對順序
+    return 0;
+});
+```
+
+## 題目二作答
+
+```csharp
+Array.Sort(blackPinkMembers, (x, y) => 
+{
+    // 當前方的 x 比後方的 y 還大，要讓 x 排到前面
+    if (x.Age > y.Age) return -1; 
+
+    // 當前方的 x 比後方的 y 還小，要讓 x 排到後面
+    else if (x.Age < y.Age) return 1; 
+
+    // 如果一樣大，維持原本相對順序
+    return 0;
+});
+```
+
+---
+
+## 題目三：⚠️ 副作用與極端值辨識 (Edge Cases)
+
+**主題：字串排序的潛在風險**
+
+在你的 `CompareBlackPinkMember` 自訂排序函式中，你在比較名字之前，特別寫了一大段針對 `null` 或空字串的防呆邏輯：
+
+```csharp
+if (string.IsNullOrEmpty(x.Name) && string.IsNullOrEmpty(y.Name))
+    result = 0;
+else if (string.IsNullOrEmpty(x.Name))
+    result = -1; // 讓沒有名字的人排到前面
+else if (string.IsNullOrEmpty(y.Name))
+    result = 1;
+else
+{
+    // 兩者皆非空值，才執行正常的字串比較...
+}
+```
+
+**問題**：
+
+如果今天一位粗心的工程師**拔除掉這段 `string.IsNullOrEmpty` 的檢查**，直接對所有成員執行 `x.Name.CompareTo(y.Name)` 或 `string.Compare(...)`。當不小心建立出一個 `new Member { Name = null, Age = 20 }` 的成員並進行排序時，程式碼預期會發生什麼事情？這段防呆邏輯救了我們什麼？
+
+## 題目三作答
+
+1. `x.Name.CompareTo(y.Name)` 應該會出現 null 相關的例外，導致程式終止。
+2. `string.Compare(...)` 可能會出現 null 相關的例外，但如果內部有檢查的話，或許不會出現。
+   - 關於 string.Compare(...)： C# 的靜態方法 string.Compare() 內部確實有做 null 檢查（它是 null-safe 的）。在 C# 的預設規則中，null 會被視為比任何字串都還要「小」，而兩個 null 比較會視為相等 (0)。所以如果你拔掉防呆只用 string.Compare，程式不會當機，而是會自動把 null 排在最前面。
+3. `new Member { Name = null, Age = 20 }` 若有檢查 `string.IsNullOrEmpty` 的話，就會進入 null 的比對，看是雙方沒名字等於0，所以一樣，還是誰沒有名字就排到後面。
+
+---
