@@ -3,112 +3,126 @@ description: C# 專案的開發規範與命名慣例
 globs: ["**/*.cs"]
 alwaysApply: false
 ---
-# C# Coding Standards
+# C# 程式碼風格規定
 
-## 命名慣例 (Naming Conventions)
+參考 .Net Runtime 和 Google C# Style Guide
 
-1. **類別與方法 (Class & Method)**:
-   - 使用 `PascalCase` (大寫開頭)。
-   - 例如: `class Student`, `void CalculateScore()`
+- [C# at Google Style Guide](https://google.github.io/styleguide/csharp-style.html)
+- [dotnet/runtime - coding-style](https://github.com/dotnet/runtime/blob/main/docs/coding-guidelines/coding-style.md)
 
-2. **區域變數與參數 (Variable & Parameter)**:
-   - 使用 `camelCase` (小寫開頭)。
-   - 例如: `int studentId`, `string firstName`
+---
 
-3. **介面 (Interface)**:
-   - 名稱必須以 `I` 開頭並使用 `PascalCase`。
-   - 例如: `interface ILogger`
+## 命名規則
 
-4. **屬性與欄位 (Property & Field)**:
-   - **屬性 (Property)**: 使用 `PascalCase`。例如: `public string FirstName { get; set; }`
-   - **private 欄位**: 使用 `_camelCase` (底線加小寫開頭)。例如: `private int _studentId;`
-   - **public / protected 欄位**: 使用 `PascalCase` (但通常建議改用屬性)。
+| 對象 | 規則 | 範例 |
+|------|------|------|
+| 類別 | PascalCase | `MyClass` |
+| 方法 | PascalCase | `GetValue()` |
+| 列舉（型別與成員） | PascalCase | `enum Color { Red, Blue }` |
+| 公開欄位 | PascalCase | `public int Count;` |
+| 公開屬性 | PascalCase | `public string Name { get; set; }` |
+| 命名空間 | PascalCase | `MyProject.Core` |
+| 區域變數 | camelCase | `resultValue` |
+| 方法參數 | camelCase | `userName` |
+| `private` / `protected` / `internal` 欄位和屬性 | _camelCase | `_myField` |
+| 介面 | I + PascalCase | `IInterface` |
+| 縮寫詞 | 視為一個單字 | `MyRpc`（非 `MyRPC`） |
 
-## 語法偏好 (Syntax Preference)
+---
 
-- **變數宣告**: 當右側型別明確時 (例如有 `new` 關鍵字)，請優先使用 `var`。
-  - Yes: `var students = new List<Student>();`
-  - No: `List<Student> students = new List<Student>();`
+## 檔案與資料夾
 
-## 成員排序慣例 (Member Ordering)
+- 檔名與資料夾名稱使用 PascalCase（`MyClass.cs`）
+- 檔名應與主要類別同名
+- 每個檔案原則上只放一個主要類別
 
-類別成員應按照以下順序排列，以提升可讀性與一致性。
+---
 
-### 1. 依成員類型排序 (By Member Type)
+## 程式碼組織
 
-| 順序 | 成員類型            | 說明                           |
-| ---- | ------------------- | ------------------------------ |
-| 1    | **Constants**       | `const` 常數                   |
-| 2    | **Static Fields**   | 靜態欄位                       |
-| 3    | **Instance Fields** | 實例欄位                       |
-| 4    | **Constructors**    | 建構子                         |
-| 5    | **Finalizers**      | 解構子 (較少使用)              |
-| 6    | **Delegates**       | 委派定義                       |
-| 7    | **Events**          | 事件                           |
-| 8    | **Properties**      | 屬性 (靜態優先於實例)          |
-| 9    | **Indexers**        | 索引子                         |
-| 10   | **Methods**         | 方法 (靜態優先於實例)          |
-| 11   | **Nested Types**    | 巢狀類型 (enum, struct, class) |
-
-### 2. 依存取修飾詞排序 (By Access Modifier)
-
-在同一類型的成員中，依公開程度由高到低排列：
-
-| 順序 | 修飾詞      |
-| ---- | ----------- |
-| 1    | `public`    |
-| 2    | `internal`  |
-| 3    | `protected` |
-| 4    | `private`   |
-
-### 3. 靜態 vs 實例 (Static vs Instance)
-
-在同一存取層級內，**靜態成員優先於實例成員**。
-
-### 4. 唯讀優先 (Readonly First)
-
-在同一類別的欄位中，`readonly` 欄位應排在可變欄位之前。
-
-### 範例 (Example)
+### 修飾符順序
 
 ```csharp
-public class Player
+public protected internal private new abstract virtual override sealed static readonly extern unsafe volatile async
+```
+
+### Using 宣告
+
+- 放在檔案頂部
+- System 命名空間優先，其餘按字母順序
+
+### 類別成員順序
+
+1. 巢狀類別、列舉、委派、事件
+2. 靜態、const、readonly 欄位
+3. 一般欄位和屬性
+4. Constructors和finalizers
+5. 方法
+
+每組內部再依存取層級排序：public → internal → protected internal → protected → private
+
+---
+
+## 格式規定
+
+- **縮排**：4 個空格，禁止使用 Tab
+- **每行一個陳述式**
+- **空行**：避免超過一個連續空行
+- **多餘空格**：避免行尾或多餘的空白字元
+
+---
+
+## 大括號
+
+採用 **Allman 風格**，大括號獨佔一行。
+
+- 單行 `if` 可省略大括號，但若任一區塊跨多行，所有區塊都必須加大括號
+
+```csharp
+// 正確：Allman 風格
+if (condition)
 {
-    // ===== Constants =====
-    public const int MaxLevel = 100;
-    private const int DefaultHealth = 100;
-
-    // ===== Static Fields =====
-    private static int _playerCount;
-
-    // ===== Instance Fields (readonly first) =====
-    private readonly int _id;
-    private string _name;
-
-    // ===== Constructors =====
-    public Player(int id, string name)
-    {
-        _id = id;
-        _name = name;
-    }
-
-    // ===== Events =====
-    public event EventHandler<int> OnDamaged;
-
-    // ===== Properties (static first) =====
-    public static int PlayerCount => _playerCount;
-    public int Id => _id;
-    public string Name { get; set; }
-
-    // ===== Methods (public -> private, static -> instance) =====
-    public static void ResetCount() => _playerCount = 0;
-
-    public void TakeDamage(int amount)
-    {
-        _health -= amount;
-        OnDamaged?.Invoke(this, amount);
-    }
-
-    private void LogStatus() => Console.WriteLine($"{_name}: HP={_health}");
+    DoSomething();
 }
+else
+{
+    DoOther();
+}
+
+// 正確：單行可省略大括號
+if (condition)
+    DoSomething();
+
+// 錯誤：混用單行與多行卻省略大括號
+if (condition)
+    DoSomething();
+else
+{
+    DoOther();
+    DoMore();
+}
+```
+
+---
+
+## 程式碼實踐
+
+- 優先使用具名常數，避免魔法數字(magic numbers)
+- 單行唯讀屬性：優先使用 expression body（`=>`）
+- `out`：永遠放在參數列表的最後
+- 字串組合一律使用字串插值（`$"..."`）
+
+### var 關鍵字
+
+- **鼓勵**：型別從右側明顯可見時（`var apple = new Apple();`）
+- **不鼓勵**：基本型別（`int`、`bool`、`string`）、使用者需要知道型別時
+
+```csharp
+// 正確
+var apple = new Apple();
+var list = new List<string>();
+
+// 錯誤
+var success = true;
+var count = 0;
 ```
