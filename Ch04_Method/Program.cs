@@ -73,6 +73,22 @@
             Console.WriteLine($"number: {numStrings}");
             Console.WriteLine($"Max number: {max}");
 		}
+
+        public static int Sum(int a, int b)
+        { 
+            return a + b;
+        }
+
+        public static int Sum(int a, int b, int c)
+        {
+            return a + b + c;
+        }
+
+        public static string Sum(string a, string b)
+        {
+            return a + b;
+        }
+
 		private static void CallValue(int x, int y)
 		{
 			x = 33;
@@ -136,7 +152,9 @@
 		/// <param name="args">陣列都是使用 Call by Reference，但可以省略 ref</param>
         static void Main(string[] args)
         {
-			SampleMethod.ShowOuputParameter();
-		}
+            Console.WriteLine($"Sum(1, 10) = {SampleMethod.Sum(1, 10)}");
+            Console.WriteLine($"Sum(11, 10, 12) = {SampleMethod.Sum(11, 10, 12)}");
+            Console.WriteLine($"Sum(Fomula, 1) = {SampleMethod.Sum("Fomula", " 1")}");
+        }
 	}
 }
