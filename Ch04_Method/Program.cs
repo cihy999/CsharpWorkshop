@@ -57,6 +57,22 @@
 			Console.WriteLine($"4. 呼叫敘述，離開方法回到原處時\t\t: a={a}, b={b}");
 		}
 
+		public static void ShowMaxNumber() 
+		{
+            var nums = new int[10];
+            Random r = new Random();
+            string numStrings = "";
+            for (int i = 0; i < nums.Length; i++)
+            {
+	            nums[i] = r.Next(101);
+	            numStrings = numStrings + nums[i] + ", ";
+            }
+
+            int max = GetMax(nums);
+
+            Console.WriteLine($"number: {numStrings}");
+            Console.WriteLine($"Max number: {max}");
+		}
 		private static void CallValue(int x, int y)
 		{
 			x = 33;
@@ -91,6 +107,24 @@
 			x = y;
 			y = temp;
 			Console.WriteLine($"3. 方法內、交換後\t\t\t: x={x}, y={y}");
+		}
+
+        /// <summary>
+        /// 取得最大值
+        /// </summary>
+        /// <param name="numbers">陣列可以省略ref</param>
+        /// <returns></returns>
+		private static int GetMax(int[] numbers)
+		{
+			int max = 0;
+
+			for (int i = 0; i < numbers.Length; i++)
+			{
+				if (max < numbers[i])
+					max = numbers[i];
+			}
+
+			return max;
 		}
 	}
 
