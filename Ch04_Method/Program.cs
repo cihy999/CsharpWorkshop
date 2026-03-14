@@ -1,7 +1,15 @@
-﻿namespace Ch04_Method
+﻿using static System.Net.Mime.MediaTypeNames;
+
+namespace Ch04_Method
 {
 	internal class LoginProcess 
 	{
+        internal struct User 
+        { 
+            public string Name;
+            public bool IsMale;
+        }
+
 		public void LoginByUser(string userName, bool isMale)
 		{
 			Console.WriteLine(GetWelcome(userName, isMale));
@@ -18,6 +26,12 @@
 			LoginProcess process = new LoginProcess();
 			process.LoginByUser(userName, isMale);
 		}
+
+        public static void Login(in User user)
+        {
+            LoginProcess process = new LoginProcess();
+            process.LoginByUser(user.Name, user.IsMale);
+        }
 	}
 
 	internal class SampleMethod 
@@ -152,9 +166,8 @@
 		/// <param name="args">陣列都是使用 Call by Reference，但可以省略 ref</param>
         static void Main(string[] args)
         {
-            Console.WriteLine($"Sum(1, 10) = {SampleMethod.Sum(1, 10)}");
-            Console.WriteLine($"Sum(11, 10, 12) = {SampleMethod.Sum(11, 10, 12)}");
-            Console.WriteLine($"Sum(Fomula, 1) = {SampleMethod.Sum("Fomula", " 1")}");
+            LoginProcess.User user = new() { Name = "Jack", IsMale = true };
+            LoginProcess.Login(user);
         }
 	}
 }
