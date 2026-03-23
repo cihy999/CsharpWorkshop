@@ -1,11 +1,11 @@
 ---
-name: Copy Message
-description: 複製當前對話內容至指定檔案
+name: copy-message
+description: 將本次對話產出的內容，複製到指定檔案
 disable-model-invocation: true
 ---
 
-# 流程
+# 複製對話
 
-- 複製最新對話內容到 $ARGUMENTS
-- 保持內容、格式，無須整理總結
-- 任何與內容無關的錯誤無須修正
+將本次對話產出的內容，複製到：$ARGUMENTS
+
+1. 保留原有內容，追加在內容之後，不要刪除既有資訊。
