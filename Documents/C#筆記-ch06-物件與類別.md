@@ -138,6 +138,12 @@ namespace Ch06_Class
 }
 ```
 
+## 物件初始設定式
+
+```csharp
+ClassA a = new ClassA("A") { Number = 15 };
+```
+
 ## 專有名詞
 
 - **屬性(Properties)**

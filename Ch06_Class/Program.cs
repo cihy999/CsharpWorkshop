@@ -1,14 +1,15 @@
-﻿namespace Ch06_Class
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace Ch06_Class
 {
     internal class Program
     {
         static void Main(string[] args)
         {
             Console.WriteLine($"建立一個屬於ClassA的物件A");
-            
-            ClassA a = new ClassA("A");
 
-            a.Number = 15;
+            // 物件初始設定式
+            ClassA a = new ClassA("A") { Number = 15 };
             a.SayHello();
             a.SayHello("Hi");
 
