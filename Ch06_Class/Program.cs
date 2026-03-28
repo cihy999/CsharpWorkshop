@@ -8,7 +8,10 @@
             
             ClassA a = new ClassA();
 
+            a.Number = 15;
+            a.Name = "A";
             a.SayHello();
+            a.SayHello("Hi");
 
             Console.WriteLine($"野生物件A已出現！");
 

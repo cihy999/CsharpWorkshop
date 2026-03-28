@@ -60,6 +60,55 @@ namespace Ch06_Class
 }
 ```
 
+## 屬性
+
+```csharp
+namespace Ch06_Class
+{
+    internal class ClassA
+    {
+        private int _number = 0;
+
+        public int Number 
+        { 
+            get 
+            { 
+                return _number; 
+            } 
+            set 
+            { 
+                if (value < 0) _number = 0;
+                _number = value;
+            } 
+        }
+
+        public string Name { get; set; } = "";
+    }
+}
+```
+
+## 方法
+
+```csharp
+namespace Ch06_Class
+{
+    internal class ClassA
+    {
+        // 省略屬性...
+
+        public void SayHello() 
+        {
+            Console.WriteLine($"{Name}: Hello, my number = {Number}");
+        }
+
+        public void SayHello(string greeting)
+        {
+            Console.WriteLine($"{Name}: {greeting}, my number = {Number}");
+        }
+    }
+}
+```
+
 ## 專有名詞
 
 - **屬性(Properties)**
