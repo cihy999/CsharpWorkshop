@@ -29,6 +29,37 @@ namespace Ch06_Class
 }
 ```
 
+## 命名空間 Namespace
+
+有效分類類別，甚至避免重名問題。
+
+```csharp
+namespace Ch06_Class
+{
+    namespace IBM
+    {
+        internal class Notebook
+        {
+            public void SayHello()
+            {
+                Console.WriteLine("IBM Notebook: Hello");
+            }
+        }
+    }
+
+    namespace Apple 
+    {
+        internal class Notebook
+        {
+            public void SayHello()
+            {
+                Console.WriteLine("Apple Notebook: Hello");
+            }
+        }
+    }
+}
+```
+
 ## 專有名詞
 
 - **屬性(Properties)**
