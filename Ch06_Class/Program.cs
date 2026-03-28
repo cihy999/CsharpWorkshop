@@ -6,10 +6,9 @@
         {
             Console.WriteLine($"建立一個屬於ClassA的物件A");
             
-            ClassA a = new ClassA();
+            ClassA a = new ClassA("A");
 
             a.Number = 15;
-            a.Name = "A";
             a.SayHello();
             a.SayHello("Hi");
 

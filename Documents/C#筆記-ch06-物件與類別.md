@@ -109,6 +109,35 @@ namespace Ch06_Class
 }
 ```
 
+## 建構函式與解構函式
+
+```csharp
+namespace Ch06_Class
+{
+    internal class ClassA
+    {
+        public string Name { get; private set; } = "";
+
+        // 建構函式
+        public ClassA()
+        {
+            Name = "Object A";
+        }
+
+        public ClassA(string name)
+        {
+            Name = name;
+        }
+
+        // 解構函式
+        ~ClassA() 
+        { 
+            
+        }
+    }
+}
+```
+
 ## 專有名詞
 
 - **屬性(Properties)**
@@ -125,3 +154,6 @@ namespace Ch06_Class
 - **抽象資料型態(Abstract Data Type, ADT)**
 - **父類別(Super Class)、基礎類別(Base Class)**
 - **子類別(Subclass)、衍生類別(Derived Class)**
+- **方法多載(Method Overloading)**：方法名稱相同，但參數個數或型態不同。
+- **建構函式(Constructor Function)**
+- **解構函式(Destructor Function)**
