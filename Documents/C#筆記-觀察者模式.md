@@ -84,29 +84,25 @@ ConcreteObserver ..|> IObserver
 @enduml
 ```
 
-### 實作觀察者模式(含有泛型)
+## 實作觀察者模式(推送型 + 泛型)
 
 觀察者、主題的基礎類別設計：
 
 ```csharp
-public interface ICustomObserver<T>
+public interface IPushObserver<T>
 {
-    /// <summary>
-    /// 採用推訊息方式(Push)廣播
-    /// </summary>
-    /// <param name="data"></param>
     public void Update(T data);
 }
 
-public abstract class CustomSubject<T>
+public abstract class PushSubject<T>
 {
-    protected List<ICustomObserver<T>> _observers = new();
+    protected List<IPushObserver<T>> _observers = new();
 
-    public void AddObserver(ICustomObserver<T> observer) => _observers.Add(observer);
+    public void AddObserver(IPushObserver<T> observer) => _observers.Add(observer);
 
-    public void RemoveObserver(ICustomObserver<T> observer) => _observers.Remove(observer);
+    public void RemoveObserver(IPushObserver<T> observer) => _observers.Remove(observer);
 
-    public void Notify() 
+    public void Notify()
     {
         foreach (var observer in _observers)
             observer.Update(GetData());
@@ -119,7 +115,7 @@ public abstract class CustomSubject<T>
 實作觀察者、主題類別：
 
 ```csharp
-public class ConcreteSubject : CustomSubject<string>
+public class ConcretePushSubject : PushSubject<string>
 {
     private string _message = "";
 
@@ -134,11 +130,15 @@ public class ConcreteSubject : CustomSubject<string>
     protected override string GetData() => _message;
 }
 
-public class ConcreteObserver : ICustomObserver<string>
+public class ConcretePushObserver : IPushObserver<string>
 {
-    public void Update(string msg)
+    /// <summary>
+    /// 採用推訊息方式(Push)，獲取通知
+    /// </summary>
+    /// <param name="data"></param>
+    public void Update(string data)
     {
-        Console.WriteLine(msg);
+        Console.WriteLine($"Push Message: {data}");
     }
 }
 ```
@@ -150,10 +150,94 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        ConcreteSubject helloSubject = new ConcreteSubject();
-        ConcreteObserver observer = new ConcreteObserver();
-        helloSubject.AddObserver(observer);
-        helloSubject.SetMessage("Hello, World!");
+        ConcretePullSubject pullSubject = new ();
+        ConcretePullObserver pullObserver = new (pullSubject);
+        pullSubject.AddObserver(pullObserver);
+        pullSubject.SetMessage("Hello, World!");
     }
 }
 ```
+
+## 實作觀察者模式(拉訊息)
+
+觀察者、主題的基礎類別設計：
+
+```csharp
+public interface IPullObserver
+{
+    public void Update();
+}
+
+public abstract class PullSubject
+{
+    protected List<IPullObserver> _observers = new();
+
+    public void AddObserver(IPullObserver observer) => _observers.Add(observer);
+
+    public void RemoveObserver(IPullObserver observer) => _observers.Remove(observer);
+
+    public void Notify()
+    {
+        foreach (var observer in _observers)
+            observer.Update();
+    }
+}
+```
+
+實作觀察者、主題類別：
+
+```csharp
+public class ConcretePullSubject : PullSubject
+{
+    private string _message = "";
+
+    public string Message { get { return _message; } }
+
+    public void SetMessage(string msg)
+    {
+        _message = msg;
+        Notify();
+    }
+}
+
+public class ConcretePullObserver : IPullObserver
+{
+    ConcretePullSubject? _subject = null;
+
+    public ConcretePullObserver(ConcretePullSubject subject)
+    {
+        _subject = subject;
+    }
+
+    /// <summary>
+    /// 採用拉訊息方式(Pull)，獲取通知
+    /// </summary>
+    /// <param name="subject"></param>
+    public void Update()
+    {
+        Console.WriteLine($"Pull messgae: {_subject?.Message ?? ""}");
+    }
+}
+```
+
+使用觀察者、主題類別：
+
+```csharp
+internal class Program
+{
+    static void Main(string[] args)
+    {
+        ConcretePushSubject pushSubject = new();
+        ConcretePushObserver pushObserver = new();
+        pushSubject.AddObserver(pushObserver);
+        pushSubject.SetMessage("Hi, World!");
+    }
+}
+```
+
+## Push & Pull 選擇
+
+- Push 優點：推送所有內容給觀察者，省去觀察者查詢動作
+- Push 缺點：推送的內容過多，會使觀察者收到不必要的資訊
+- Pull 優點：觀察者只需要被通知更新、再查詢所需資訊
+- Pull 缺點：主題必須提供查詢方式，容易造成主題類別的方法過多
