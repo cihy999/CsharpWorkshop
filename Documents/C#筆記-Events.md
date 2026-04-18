@@ -50,13 +50,6 @@
   - 想要從「只會寫程式」晉升到「理解系統架構」的中高階 C# 開發者。
   - 準備進行 .NET 技術面試，需要掌握事件底層原理的求職者。
 
-## 專有名詞
-
-- **鬆散耦合(Loose Coupling)**：系統中的各個元件（例如類別、模組或物件）彼此之間的依賴程度很低，互相知道的細節越少越好。
-- **緊密耦合(Tight Coupling)**：與**鬆散耦合**相反。
-  - 以餐廳點餐為例，你必須走進廚房，找到負責做漢堡的廚師，然後直接告訴他漢堡的具體做法、要加多少鹽和醬料。如果廚師換人了，你就必須重新認識新廚師才能點餐。
-  - 鬆散耦合的餐廳點餐：你只需要在座位上，對著服務鈴按一下，服務生就會過來問你要點什麼。你不需要知道廚房裡是誰在做漢堡，也不需要知道漢堡是怎麼做的。如果廚師換人了，也不會點不到漢堡。
-
 ## 練習觀察者模式
 
 ```csharp
@@ -164,7 +157,130 @@ namespace EventsPractice.Observer
 }
 ```
 
+```csharp
+static void Main(string[] args)
+{
+   Observer.Author author = new("Nintendo", "Game Developer");
+   Observer.User firstUser = new("Simon");
+   Observer.User secondUser = new("Cindy");
+
+   // 讓使用者訂閱作者
+   firstUser.Subscribe(author);
+   secondUser.Subscribe(author);
+
+   // 作者寫新文章
+   Article article = new("Tomodachi Life", "朋友收集 夢想生活", author.Id);
+   author.Publish(article);
+
+   // 新文章 + 退訂
+   Console.WriteLine();
+   Console.WriteLine("--------Changes in article-----------");
+   article = article.WithTitle("Tomodachi Life is Goooood");
+   author.RemoveSubscriber(secondUser);
+   author.Publish(article);
+}
+```
+
+## 練習Delegate取代ISubscriber
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Delegate
+{
+    public delegate void SubscriberDelegate(string message);
+
+    internal interface IPublisher
+    {
+        public void AddSubscriber(Guid subscriberId, SubscriberDelegate subscriber);
+        public void RemoveSubscriber(Guid subscriberId);
+        public void Publish(Article article);
+    }
+}
+```
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Delegate
+{
+    internal record Author : DomainEntity, IPublisher
+    {
+        private readonly Dictionary<Guid, SubscriberDelegate>? subscribers;
+
+        public string Name { get; init; }
+        public string Description { get; init; }
+
+        public Author(string name, string description)
+        {
+            Name = name;
+            Description = description;
+            subscribers = [];
+        }
+
+        public void AddSubscriber(Guid subscriberId, SubscriberDelegate subscriber)
+        {
+            subscribers?.Add(subscriberId, subscriber);
+        }
+
+        public void RemoveSubscriber(Guid subscriberId)
+        {
+            subscribers?.Remove(subscriberId);
+        }
+
+        public void Publish(Article article)
+        {
+            Article createdArticle = article.Create();
+            Notify(createdArticle.ToString());
+        }
+
+        private void Notify(string message)
+        {
+            if (subscribers == null) return;
+
+            foreach (var item in subscribers!.Values)
+            {
+                item(message);
+            }
+        }
+    }
+}
+```
+
+```csharp
+static void Main(string[] args)
+{
+   Delegate.Author author = new("Nintendo", "Game Developer");
+   Observer.User firstUser = new("Simon");
+   Observer.User secondUser = new("Cindy");
+
+   author.AddSubscriber(firstUser.Id, firstUser.Update);
+   author.AddSubscriber(secondUser.Id, secondUser.Update);
+
+   Article article = new("Tomodachi Life", "朋友收集 夢想生活", author.Id);
+   author.Publish(article);
+
+   Console.WriteLine();
+   Console.WriteLine("--------Changes in article-----------");
+   article = article.WithTitle("Tomodachi Life is Goooood");
+   author.RemoveSubscriber(secondUser.Id);
+   author.Publish(article);
+}
+```
+
+### 小結：Delegate 與介面
+
+- 若只有單一簽章、不需狀態，技術上可用 `delegate` 取代介面。
+- 從架構角度，講者認為 **介面通常仍比 delegate 更合適**。
+
 # 補充
+
+## 專有名詞
+
+- **鬆散耦合(Loose Coupling)**：系統中的各個元件（例如類別、模組或物件）彼此之間的依賴程度很低，互相知道的細節越少越好。
+- **緊密耦合(Tight Coupling)**：與**鬆散耦合**相反。
+  - 以餐廳點餐為例，你必須走進廚房，找到負責做漢堡的廚師，然後直接告訴他漢堡的具體做法、要加多少鹽和醬料。如果廚師換人了，你就必須重新認識新廚師才能點餐。
+  - 鬆散耦合的餐廳點餐：你只需要在座位上，對著服務鈴按一下，服務生就會過來問你要點什麼。你不需要知道廚房裡是誰在做漢堡，也不需要知道漢堡是怎麼做的。如果廚師換人了，也不會點不到漢堡。
 
 ## C# `record` 是什麼？
 
