@@ -56,3 +56,194 @@
 - **緊密耦合(Tight Coupling)**：與**鬆散耦合**相反。
   - 以餐廳點餐為例，你必須走進廚房，找到負責做漢堡的廚師，然後直接告訴他漢堡的具體做法、要加多少鹽和醬料。如果廚師換人了，你就必須重新認識新廚師才能點餐。
   - 鬆散耦合的餐廳點餐：你只需要在座位上，對著服務鈴按一下，服務生就會過來問你要點什麼。你不需要知道廚房裡是誰在做漢堡，也不需要知道漢堡是怎麼做的。如果廚師換人了，也不會點不到漢堡。
+
+## 練習觀察者模式
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Observer
+{
+    internal interface IPublisher
+    {
+        public void AddSubscriber(ISubscriber subscriber);
+        public void RemoveSubscriber(ISubscriber subscriber);
+        public void Publish(Article article);
+    }
+}
+```
+
+```csharp
+namespace EventsPractice.Observer
+{
+    internal interface ISubscriber
+    {
+        public void Subscribe(IPublisher publisher);
+        public void Unsubscribe(IPublisher publisher);
+        public void Update(string message);
+    }
+}
+```
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Observer
+{
+    internal record Author : DomainEntity, IPublisher
+    {
+        private readonly List<ISubscriber>? subscribers;
+
+        public string Name { get; init; }
+        public string Description { get; init; }
+
+        public Author(string name, string description)
+        {
+            Name = name;
+            Description = description;
+            subscribers = [];
+        }
+
+        public void AddSubscriber(ISubscriber subscriber)
+        {
+            subscribers?.Add(subscriber);
+        }
+
+        public void RemoveSubscriber(ISubscriber subscriber)
+        {
+            subscribers?.Remove(subscriber);
+        }
+
+        public void Publish(Article article)
+        {
+            Article createdArticle = article.Create();
+            string subscriberUpdateMessage = createdArticle.ToString();
+            Notify(subscriberUpdateMessage);
+        }
+
+        private void Notify(string message)
+        {
+            subscribers?.ForEach(subscriber =>
+            {
+                subscriber.Update(message);
+            });
+        }
+    }
+}
+```
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Observer
+{
+    internal record User : DomainEntity, ISubscriber
+    {
+        public string Name { get; init; }
+
+        public User(string name)
+        {
+            Name = name;
+        }
+
+        public void Subscribe(IPublisher publisher)
+        {
+            publisher.AddSubscriber(this);
+        }
+
+        public void Unsubscribe(IPublisher publisher)
+        {
+            publisher.RemoveSubscriber(this);
+        }
+
+        public void Update(string message)
+        {
+            Console.WriteLine(message);
+        }
+    }
+}
+```
+
+# 補充
+
+## C# `record` 是什麼？
+
+`record` 是 C# 9 起引入的一種**參考型別**（預設是 `record class`，與 `class` 一樣在堆積上配置），語法上用來表示「**以資料為中心、以值語意比較為主**」的型別。
+
+常見寫法：
+
+```csharp
+public record Person(string Name, int Age);
+```
+
+編譯器會幫你產生：
+
+- 屬性（上例的 `Name`、`Age`）
+- **以值相等**為主的 `Equals` / `GetHashCode`（會比對各欄位，而不是只比參考）
+- `ToString()`（會印出有意義的內容）
+- `with` 表達式用的複製語意（`with` 會產生新實例並只改指定欄位）
+
+也有 `record struct`（C# 10），是**實值型別**的 record，同樣強調值相等與簡潔語法。
+
+---
+
+### 主要用途
+
+1. **DTO / 唯讀資料模型**  
+   API 回傳、訊息、設定片段等「一組欄位」的載體，需要**相等性依內容**而不是依物件身分。
+2. **不可變（immutable）資料**  
+   搭配 `init` 或 positional record，容易做出「建立後不變」的物件，並用 `with` 做**非破壞性更新**。
+3. **模式比對與分解**  
+   `record` 與 `switch` / `is` 模式比對、分解（deconstruction）搭配得很好，適合表達「這種形狀的資料」。
+4. **減少樣板程式**  
+   少寫手動實作的 `Equals`、`GetHashCode`、`ToString`、複製建構子邏輯。
+
+---
+
+### 和 `class` 的直覺差異
+
+| 面向 | 典型 `class` | `record`（預設） |
+|------|----------------|------------------|
+| 相等性 | 常預設為**參考相等** | 預設為**值相等**（依欄位） |
+| 常見用途 | 行為 + 狀態、領域物件 | 資料載體、值語意模型 |
+
+若你需要**可變狀態、繼承階層複雜、以身分識別為主**的物件，仍可能用一般 `class`；若以**內容相同即視為相同、不可變與複製更新**為主，`record` 很合適。
+
+## `init` 是什麼？
+
+在 C# 裡，`init` 是**屬性存取子**的一種（和 `get`、`set` 並列），從 **C# 9** 開始提供。
+
+```csharp
+public string Description { get; init; }
+```
+
+意思是：**這個屬性只能在「物件建立／初始化」的那段期間被賦值，建立完成後就不能再從外面改。**
+
+- 物件初始設定式（object initializer）裡：`new Author { Description = "..." }`
+- 建構函式裡：`this.Description = ...`
+
+建立好之後，若再寫 `author.Description = "別的"`，**編譯會失敗**（除非在型別內部有特殊設計）。
+
+## `with` 表達式
+
+```csharp
+public Article Create()
+{
+   return this with { IsPublished = true };
+}
+```
+
+`this with { ... }` 是 **`with` 表達式**（C# 9+）：用**目前這個物件當範本**，**複製出一個新的 `Article`**，並且只把大括號裡列出的屬性改成新值。
+
+所以 `Create()` 的意思是：
+
+- **不會**改動原本的 `this`（`IsPublished` 還是建構／初始設定時的值，預設是 `false`）。
+- **會回傳另一個** `Article`，內容和 `this` 一樣，但 **`IsPublished = true`**。
+
+也就是「以不可變／以複製為主的更新」：常搭配 `init` 屬性，做出「新版本」而不是當場修改欄位。
+
+---
+
+### 若沒有 `with` 要怎麼想？
+
+概念上接近：「做一個跟我一樣的新物件，但把 `IsPublished` 設成 `true`。」`record` 會幫你處理複製各欄位；手寫 `class` 時通常要自己 `new Article(...)` 把所有欄位再傳一遍。
