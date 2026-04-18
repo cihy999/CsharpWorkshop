@@ -273,6 +273,83 @@ static void Main(string[] args)
 - 若只有單一簽章、不需狀態，技術上可用 `delegate` 取代介面。
 - 從架構角度，講者認為 **介面通常仍比 delegate 更合適**。
 
+## 練習Event取代ISubscriber
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Event
+{
+    public delegate void SubscriberDelegate(string message);
+
+    internal interface IPublisher
+    {
+        public event SubscriberDelegate? OnPublish;
+
+        public void Publish(Article article);
+    }
+}
+```
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.Event
+{
+    internal record Author : DomainEntity, IPublisher
+    {
+        public event SubscriberDelegate? OnPublish;
+
+        public string Name { get; init; }
+        public string Description { get; init; }
+
+        public Author(string name, string description)
+        {
+            Name = name;
+            Description = description;
+        }
+
+        public void Publish(Article article)
+        {
+            Article createdArticle = article.Create();
+            string subscriberUpdateMessage = article.ToString();
+            OnPublish?.Invoke(subscriberUpdateMessage);
+        }
+    }
+}
+```
+
+```csharp
+static void Main(string[] args)
+{
+   Event.Author author = new("Nintendo", "Game Developer");
+   Observer.User firstUser = new("Simon");
+   Observer.User secondUser = new("Cindy");
+
+   // 讓使用者訂閱作者
+   author.OnPublish += firstUser.Update;
+   author.OnPublish += secondUser.Update;
+
+   // 作者寫新文章
+   Article article = new("Tomodachi Life", "朋友收集 夢想生活", author.Id);
+   author.Publish(article);
+
+   // 新文章 + 退訂
+   Console.WriteLine();
+   Console.WriteLine("--------Changes in article-----------");
+   article = article.WithTitle("Tomodachi Life is Goooood");
+   author.OnPublish -= secondUser.Update;
+   author.Publish(article);
+}
+```
+
+### 觀念對照：Event vs.「當參數的 Delegate」
+
+- **使用時機**：在有某件事發生、要通知訂閱者時，用 event 較直覺；delegate 也能做，但先前那種自己存清單、foreach 通知的寫法比較繁瑣。
+- **一般慣例**：delegate 常當方法參數（例如 callback）；若 API 要求傳入 delegate，語意上往往是必填，一定要在某處被呼叫，系統才算完整。
+- **Event**：可以有 0 個或多個訂閱者；沒人訂閱時，程式仍可正常執行（註解掉訂閱程式碼也沒問題）。
+- **對比**：若把語意上應該是 callback 的 delegate 當成必傳參數（例如某 LINQ 風格方法接受 delegate），不傳可能讓流程無法合理完成；event 則可不訂閱、不通知任何部分。
+
 # 補充
 
 ## 專有名詞

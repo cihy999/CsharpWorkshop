@@ -1,6 +1,7 @@
 ﻿using CommonArticleLibrary;
 using Delegate = EventsPractice.Delegate;
 using Observer = EventsPractice.Observer;
+using Event = EventsPractice.Event;
 
 namespace EventsPractice
 {
@@ -8,7 +9,7 @@ namespace EventsPractice
     {
         static void Main(string[] args)
         {
-            DoDelegate();
+            DoEvent();
         }
 
         private static void DoObserver()
@@ -49,6 +50,28 @@ namespace EventsPractice
             Console.WriteLine("--------Changes in article-----------");
             article = article.WithTitle("Tomodachi Life is Goooood");
             author.RemoveSubscriber(secondUser.Id);
+            author.Publish(article);
+        }
+
+        private static void DoEvent()
+        {
+            Event.Author author = new("Nintendo", "Game Developer");
+            Observer.User firstUser = new("Simon");
+            Observer.User secondUser = new("Cindy");
+
+            // 讓使用者訂閱作者
+            author.OnPublish += firstUser.Update;
+            author.OnPublish += secondUser.Update;
+
+            // 作者寫新文章
+            Article article = new("Tomodachi Life", "朋友收集 夢想生活", author.Id);
+            author.Publish(article);
+
+            // 新文章 + 退訂
+            Console.WriteLine();
+            Console.WriteLine("--------Changes in article-----------");
+            article = article.WithTitle("Tomodachi Life is Goooood");
+            author.OnPublish -= secondUser.Update;
             author.Publish(article);
         }
     }
