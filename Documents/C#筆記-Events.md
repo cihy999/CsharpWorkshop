@@ -350,6 +350,125 @@ static void Main(string[] args)
 - **Event**：可以有 0 個或多個訂閱者；沒人訂閱時，程式仍可正常執行（註解掉訂閱程式碼也沒問題）。
 - **對比**：若把語意上應該是 callback 的 delegate 當成必傳參數（例如某 LINQ 風格方法接受 delegate），不傳可能讓流程無法合理完成；event 則可不訂閱、不通知任何部分。
 
+## 練習EventHandler取代Event
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.EventHandler
+{
+    public class PublishEventArgs(string message) : EventArgs
+    {
+        public string Message { get; init; } = message;
+    }
+
+    internal interface IPublisher
+    {
+        // 有通知機制時，優先採用 EventHandler 比自訂 delegate 更妥
+        // EventHandler<T> 為泛型：若要傳自訂資料給訂閱者，應定義 EventArgs 子類
+        event EventHandler<PublishEventArgs> OnPublish;
+
+        public void Publish(Article article);
+    }
+}
+```
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.EventHandler
+{
+    internal record Author : DomainEntity, IPublisher
+    {
+        public event EventHandler<PublishEventArgs>? OnPublish;
+
+        public string Name { get; init; }
+        public string Description { get; init; }
+
+        public Author(string name, string description)
+        {
+            Name = name;
+            Description = description;
+        }
+
+        public void Publish(Article article)
+        {
+            Article createdArticle = article.Create();
+            string subscriberUpdateMessage = createdArticle.ToString();
+            // Sender: 傳自己當作 sender
+            OnPublish?.Invoke(this, new PublishEventArgs(subscriberUpdateMessage));
+        }
+    }
+}
+```
+
+```csharp
+using CommonArticleLibrary;
+
+namespace EventsPractice.EventHandler
+{
+    internal record User : DomainEntity
+    {
+        private EventHandler<PublishEventArgs>? _publishLambda;
+
+        public string Name { get; init; }
+
+        public User(string name)
+        {
+            Name = name;
+        }
+
+        public void Subscribe(IPublisher publisher)
+        {
+            //publisher.OnPublish += Publisher_OnPublish;
+
+            // Lambda 版本
+            // 一定要建一個EventHandler，確保都用同一個實例綁定、解除事件通知
+            if (_publishLambda == null)
+                _publishLambda = new ((sender, args) => Console.WriteLine(args.Message));
+            publisher.OnPublish += _publishLambda;
+        }
+
+        public void Unsubscribe(IPublisher publisher)
+        {
+            //publisher.OnPublish -= Publisher_OnPublish;
+
+            if (_publishLambda != null)
+                publisher.OnPublish -= _publishLambda;
+        }
+
+        private void Publisher_OnPublish(object? sender, PublishEventArgs e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }
+}
+```
+
+```csharp
+static void Main(string[] args)
+{
+   EventHandler.Author author = new("Nintendo", "Game Developer");
+   EventHandler.User firstUser = new("Simon");
+   EventHandler.User secondUser = new("Cindy");
+
+   // 讓使用者訂閱作者
+   firstUser.Subscribe(author);
+   secondUser.Subscribe(author);
+
+   // 作者寫新文章
+   Article article = new("Tomodachi Life", "朋友收集 夢想生活", author.Id);
+   author.Publish(article);
+
+   // 新文章 + 退訂
+   Console.WriteLine();
+   Console.WriteLine("--------Changes in article-----------");
+   article = article.WithTitle("Tomodachi Life is Goooood");
+   secondUser.Unsubscribe(author);
+   author.Publish(article);
+}
+```
+
 # 補充
 
 ## 專有名詞
