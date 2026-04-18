@@ -559,3 +559,32 @@ public Article Create()
 ### 若沒有 `with` 要怎麼想？
 
 概念上接近：「做一個跟我一樣的新物件，但把 `IsPublished` 設成 `true`。」`record` 會幫你處理複製各欄位；手寫 `class` 時通常要自己 `new Article(...)` 把所有欄位再傳一遍。
+
+---
+
+## event 深入解析
+
+`event` 的底層是委派，委派是 `multicast` 宣告這行：
+
+```csharp
+public event SubscriberDelegate? OnPublish;
+```
+
+這時 `OnPublish` 的初始值是 `null`，還不是任何實例。
+
+當你第一次 += 時：
+
+```csharp
+author.OnPublish += firstUser.Update;
+```
+
+C# 編譯器會把這行展開成類似：
+
+```csharp
+author.OnPublish = (SubscriberDelegate)Delegate.Combine(author.OnPublish, firstUser.Update);
+```
+
+`Delegate.Combine` 的行為：
+
+- 若左側是 `null`，就直接回傳右側，這時才建立第一個委派實例
+- 若左側已有實例，就把兩個合併成一個新的 `multicast` 委派實例（舊的被取代）
