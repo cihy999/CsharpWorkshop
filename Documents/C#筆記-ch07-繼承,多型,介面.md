@@ -232,6 +232,65 @@ namespace Ch07_Inherit
 }
 ```
 
+## 抽象類別
+
+```csharp
+namespace Ch07_Inherit
+{
+    internal abstract class Traffic
+    {
+        protected static int _miles = 0;
+
+        public virtual void SpeedUp()
+        { 
+            
+        }
+    }
+
+    internal class Boat : Traffic
+    {
+        public override void SpeedUp()
+        {
+            _miles += 5;
+            Console.WriteLine($"駕駛船，加速中，前進至{_miles}公里");
+        }
+    }
+
+    internal class Airplane : Traffic
+    {
+        public override void SpeedUp()
+        {
+            _miles += 10;
+            Console.WriteLine($"駕駛飛機，加速中，前進至{_miles}公里");
+        }
+    }
+}
+```
+
+```csharp
+namespace Ch07_Inherit
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            ShowSpeedUp();
+        }
+
+        private static void ShowSpeedUp()
+        {
+            // 抽象類別不能建立實例
+            //Traffic r = new Traffic();
+            Traffic r1 = new Boat();
+            Traffic r2 = new Airplane();
+
+            r1.SpeedUp();
+            r2.SpeedUp();
+        }
+    }
+}
+```
+
 ## 專有名詞
 
 - 基底類別 Base Class、父類別 Parent Class、超類別 Super Class

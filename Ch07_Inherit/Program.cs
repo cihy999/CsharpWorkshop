@@ -4,7 +4,7 @@
     {
         static void Main(string[] args)
         {
-            ShowCar();
+            ShowSpeedUp();
         }
 
         private static void ShowEmployeeSalary() 
@@ -39,6 +39,17 @@
             Console.WriteLine($"{ford.GetCarNoString()}");
             Console.WriteLine($"{Car.GetTotalCarString()}");
             Console.WriteLine("==========================");
+        }
+
+        private static void ShowSpeedUp()
+        {
+            // 抽象類別不能建立實例
+            //Traffic r = new Traffic();
+            Traffic r1 = new Boat();
+            Traffic r2 = new Airplane();
+
+            r1.SpeedUp();
+            r2.SpeedUp();
         }
     }
 }
