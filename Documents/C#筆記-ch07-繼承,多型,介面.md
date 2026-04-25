@@ -118,7 +118,123 @@ c1 ----> Car#1
 c2 ----> Car#2
 ```
 
+## 多型
+
+```csharp
+namespace Ch07_Inherit
+{
+    internal class Employee
+    {
+        protected int _salary = 0;
+
+        public virtual int Salary
+        {
+            get 
+            { 
+                return _salary;
+            }
+            set 
+            {
+                if (value < 20000)
+                    _salary = 20000;
+                else if (value > 40000)
+                    _salary = 40000;
+                else
+                    _salary = value;
+            }
+        }
+
+        public virtual int TotalPayment { get { return _salary; } }
+    }
+
+    internal class Manager : Employee 
+    { 
+        public int Bonus { get; set; }
+
+        public override int Salary
+        {
+            get
+            {
+                return _salary;
+            }
+            set
+            {
+                if (value < 30000)
+                    _salary = 30000;
+                else if (value > 60000)
+                    _salary = 60000;
+                else
+                    _salary = value;
+            }
+        }
+
+        public override int TotalPayment { get { return base.TotalPayment + Bonus; } }
+    }
+}
+```
+
+### 動態繫結
+
+```csharp
+namespace Ch07_Inherit
+{
+    internal abstract class Traffic
+    {
+        protected static int _miles = 0;
+
+        public virtual void SpeedUp()
+        { 
+            
+        }
+    }
+
+    internal class Boat : Traffic
+    {
+        public override void SpeedUp()
+        {
+            _miles += 5;
+            Console.WriteLine($"駕駛船，加速中，前進至{_miles}公里");
+        }
+    }
+
+    internal class Airplane : Traffic
+    {
+        public override void SpeedUp()
+        {
+            _miles += 10;
+            Console.WriteLine($"駕駛飛機，加速中，前進至{_miles}公里");
+        }
+    }
+}
+```
+
+```csharp
+namespace Ch07_Inherit
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            ShowSpeedUp();
+        }
+
+        private static void ShowSpeedUp()
+        {
+            // 抽象類別不能建立實例
+            //Traffic r = new Traffic();
+            Traffic r1 = new Boat();
+            Traffic r2 = new Airplane();
+
+            r1.SpeedUp();
+            r2.SpeedUp();
+        }
+    }
+}
+```
+
 ## 專有名詞
 
 - 基底類別 Base Class、父類別 Parent Class、超類別 Super Class
 - 衍生類別 Derived Class、子類別 Child Class、次類別 Sub Class
+- 多型 Polymorphism
+- 動態繫結 Dynamic Binding：程式進入執行階段時，物件參考才決定所要執行的方法。

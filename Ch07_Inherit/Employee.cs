@@ -2,9 +2,9 @@
 {
     internal class Employee
     {
-        private int _salary = 0;
+        protected int _salary = 0;
 
-        public int Salary 
+        public virtual int Salary
         {
             get 
             { 
@@ -20,12 +20,31 @@
                     _salary = value;
             }
         }
+
+        public virtual int TotalPayment { get { return _salary; } }
     }
 
     internal class Manager : Employee 
     { 
         public int Bonus { get; set; }
 
-        public int TotalPayment { get { return Salary + Bonus; } }
+        public override int Salary
+        {
+            get
+            {
+                return _salary;
+            }
+            set
+            {
+                if (value < 30000)
+                    _salary = 30000;
+                else if (value > 60000)
+                    _salary = 60000;
+                else
+                    _salary = value;
+            }
+        }
+
+        public override int TotalPayment { get { return base.TotalPayment + Bonus; } }
     }
 }
