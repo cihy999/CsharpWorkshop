@@ -79,3 +79,46 @@ public class EdenZeroProvider : IBankProvider
     }
 }
 ```
+
+## 實踐開放封閉原則 (Open-Closed Principle)
+
+遍歷組件中所有的類型（Types），尋找實作了 `IBankProvider` 介面且非抽象的類別。
+
+主程式完全不需要引用 `EdenZeroBank.dll` 或 `PrivateNMBank.dll`。只要把 DLL 丟進資料夾，程式執行時就會自動出現該銀行的功能。
+
+```csharp
+internal class ProviderService : IProviderService
+{
+    // Libs 資料夾存放各銀行的動態函式庫(dll)
+    private const string FolderPath = "libs";
+    private const string Extension = "*.dll";
+    private readonly string _libsPath;
+
+    public ProviderService()
+    {
+        _libsPath = ApplicationPath.PathTo(FolderPath);
+    }
+
+    public IEnumerable<IBankProvider> GetProviders()
+    {
+        // 掃描 Libs 資料夾下所有的 .dll 檔案
+        string[] providers = Directory.GetFiles(_libsPath, Extension);
+        foreach (string provider in providers)
+        {
+            // 載入組件後，建立銀行實例(通過反射 Reflection)
+            Assembly assembly = Assembly.LoadFile(provider);
+            Type[] assemblyTypes = assembly.GetTypes();
+            IEnumerable<Type> providerTypes = assemblyTypes.Where(t => t.GetInterface(nameof(IBankProvider), true) != null);
+            foreach (Type providerType in providerTypes)
+            {
+                object? instance = Activator.CreateInstance(providerType);
+                if (instance is IBankProvider bankProvider)
+                {
+                    // 先回傳一個，等下次有人要再繼續跑
+                    yield return bankProvider;
+                }
+            }
+        }
+    }
+}
+```
