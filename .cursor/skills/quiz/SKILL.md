@@ -1,5 +1,7 @@
 ---
+name: Quiz
 description: 針對最近的程式碼修改或討論主題，生成一個互動式測驗 (Quiz)
+disable-model-invocation: true
 ---
 
 # Quiz
