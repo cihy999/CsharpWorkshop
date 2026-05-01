@@ -37,9 +37,45 @@
 ### 第三部分：實踐建議 (Take Action)
 
 * **總結重點**：
-  1.  **優先設計介面**：在撰寫具體邏輯前，先定義好通訊契約，這能強迫你思考模組間的權責劃分。
-  2.  **善用 DLL 插件化**：將易變動的第三方整合（如 API、支付閘道）放入獨立的專案，透過掃描資料夾的方式載入，達成系統的「熱插拔」功能。
+  1. **優先設計介面**：在撰寫具體邏輯前，先定義好通訊契約，這能強迫你思考模組間的權責劃分。
+  2. **善用 DLL 插件化**：將易變動的第三方整合（如 API、支付閘道）放入獨立的專案，透過掃描資料夾的方式載入，達成系統的「熱插拔」功能。
 * **適用對象**：
-  - 想要進階為**資深開發者**的 C# 初中階工程師。
-  - 需要設計**外掛系統（Plugin System）**或大型企業級應用的架構師。
-  - 對 **物件導向設計原則（SOLID）** 有基礎但不知如何實際應用的學習者。
+  * 想要進階為**資深開發者**的 C# 初中階工程師。
+  * 需要設計**外掛系統（Plugin System）**或大型企業級應用的架構師。
+  * 對 **物件導向設計原則（SOLID）** 有基礎但不知如何實際應用的學習者。
+
+## Interface 程式碼示範
+
+介面只宣告屬性、方法、事件，皆為公開（public）。
+
+```csharp
+public interface IBankProvider
+{
+    string ProviderName { get; }
+    void AddToBalance(CardNumber cardNumber, decimal amount);
+    decimal GetBalance(CardNumber cardNumber);
+}
+```
+
+實作示範：
+
+```csharp
+public class EdenZeroProvider : IBankProvider
+{
+    public string ProviderName => "EdenZero";
+
+    public void AddToBalance(CardNumber cardNumber, decimal amount)
+    {
+        if (!IsCardNumberExist(cardNumber.Number))
+            throw new ArgumentException("Card number is not valid");
+        Cards[cardNumber.Number] += amount;
+    }
+
+    public decimal GetBalance(CardNumber cardNumber)
+    {
+        if (!IsCardNumberExist(cardNumber.Number))
+            throw new ArgumentException("Card number is not valid");
+        return Cards[cardNumber.Number];
+    }
+}
+```
