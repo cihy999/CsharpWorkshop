@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace DecodeBytes.Common.Implementations
 {
-    internal class ProviderService : IProviderService
+    public class ProviderService : IProviderService
     {
         // Libs 資料夾存放各銀行的動態函式庫(dll)
         private const string FolderPath = "libs";

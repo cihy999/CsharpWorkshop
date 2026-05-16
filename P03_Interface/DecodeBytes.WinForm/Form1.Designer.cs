@@ -1,6 +1,6 @@
 ﻿namespace DecodeBytes.WinForm
 {
-    partial class Form1
+    partial class mainForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -28,12 +28,47 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Text = "Form1";
+            saveFileDialog1 = new SaveFileDialog();
+            groupBoxProviders = new GroupBox();
+            btn_relaod = new Button();
+            SuspendLayout();
+            // 
+            // groupBoxProviders
+            // 
+            groupBoxProviders.Location = new Point(30, 88);
+            groupBoxProviders.Name = "groupBoxProviders";
+            groupBoxProviders.Size = new Size(1199, 533);
+            groupBoxProviders.TabIndex = 0;
+            groupBoxProviders.TabStop = false;
+            groupBoxProviders.Text = "Providers";
+            // 
+            // btn_relaod
+            // 
+            btn_relaod.Location = new Point(976, 12);
+            btn_relaod.Name = "btn_relaod";
+            btn_relaod.Size = new Size(253, 70);
+            btn_relaod.TabIndex = 1;
+            btn_relaod.Text = "Reload Providers";
+            btn_relaod.UseVisualStyleBackColor = true;
+            btn_relaod.Click += btn_relaod_Click;
+            // 
+            // mainForm
+            // 
+            AutoScaleDimensions = new SizeF(11F, 23F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1258, 664);
+            Controls.Add(btn_relaod);
+            Controls.Add(groupBoxProviders);
+            Name = "mainForm";
+            Text = "BankWindow";
+            Load += mainForm_Load;
+            ResumeLayout(false);
         }
 
         #endregion
+
+        private SaveFileDialog saveFileDialog1;
+        private GroupBox groupBoxProviders;
+        private Button btn_relaod;
     }
 }

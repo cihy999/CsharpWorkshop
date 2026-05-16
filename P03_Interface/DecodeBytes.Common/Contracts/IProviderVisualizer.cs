@@ -1,6 +1,6 @@
 ﻿namespace DecodeBytes.Common.Contracts
 {
-    internal interface IProviderVisualizer
+    public interface IProviderVisualizer
     {
         void RenderProviders();
     }
