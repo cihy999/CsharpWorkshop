@@ -84,3 +84,49 @@ internal class Program
     }
 }
 ```
+
+### 封裝資料類型：使用 Predicate
+
+```csharp
+using P02_Delegate.Models;
+
+namespace P02_Delegate;
+
+// 不宣告 Delegate，改用內建的 Predicate<T>
+//public delegate bool CustomerDelegate(int customerId);
+//public delegate bool CustomerCardDelegate(Card card);
+
+internal class Program
+{
+    static void Main()
+    {
+        foreach (var card in GetCards(x => x == 4))
+            Console.WriteLine(card);
+
+        foreach (var card in GetCards(x => x.HolderName == "Hanma Baki"))
+            Console.WriteLine(card);
+    }
+
+    static List<Card> GetCards(Predicate<int> predicate)
+    {
+        List<Card> cards = [];
+        foreach (var card in CardData.All)
+        {
+            if (predicate(card.CustomerId))
+                cards.Add(card);
+        }
+        return cards;
+    }
+
+    static List<Card> GetCards(Predicate<Card> predicate)
+    {
+        List<Card> cards = [];
+        foreach (var card in CardData.All)
+        {
+            if (predicate(card))
+                cards.Add(card);
+        }
+        return cards;
+    }
+}
+```
