@@ -43,6 +43,3 @@
 
 ---
 影片連結：[https://www.youtube.com/watch?v=kNyf0NOYalE](https://www.youtube.com/watch?v=kNyf0NOYalE)
-
-
-http://googleusercontent.com/youtube_content/0
