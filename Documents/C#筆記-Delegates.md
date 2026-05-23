@@ -46,3 +46,41 @@
   2. 優先使用 Lambda 表達式搭配內建委派，保持代碼簡潔。
 
 ---
+
+## Delegate 程式碼示範
+
+### 邏輯封裝：使用委派
+
+```csharp
+using P02_Delegate.Models;
+
+namespace P02_Delegate;
+
+// 自訂 delegate（Step 3）；實務上優先使用 Predicate<T> / Func<T, bool>
+public delegate bool CustomerDelegate(int customerId);
+
+/// <summary>
+/// 依《Master C# Delegates Like a Senior Developer》逐步重構 GetCards。
+/// 資料來源為 CardData（記憶體），不涉及資料庫。
+/// </summary>
+internal class Program
+{
+    static void Main()
+    {
+        foreach (var card in GetCardsByCustomerDelegate(customerId => customerId == 3))
+            Console.WriteLine(card);
+    }
+
+    /// <summary>重用性 ≈ 75%：判斷邏輯由外部傳入，但僅針對 CustomerId。</summary>
+    static List<Card> GetCardsByCustomerDelegate(CustomerDelegate customerDelegate)
+    {
+        List<Card> cards = [];
+        foreach (var card in CardData.All)
+        {
+            if (customerDelegate(card.CustomerId))
+                cards.Add(card);
+        }
+        return cards;
+    }
+}
+```
