@@ -1,4 +1,4 @@
-﻿namespace EAP
+namespace EAP
 {
     partial class Form1
     {
@@ -31,6 +31,7 @@
             progressBar1 = new ProgressBar();
             button1 = new Button();
             label1 = new Label();
+            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             SuspendLayout();
             // 
             // progressBar1
@@ -48,6 +49,7 @@
             button1.TabIndex = 1;
             button1.Text = "Download";
             button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
             // 
             // label1
             // 
@@ -57,6 +59,14 @@
             label1.Size = new Size(36, 23);
             label1.TabIndex = 2;
             label1.Text = "0%";
+            // 
+            // backgroundWorker1
+            // 
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
+            backgroundWorker1.DoWork += backgroundWorker1_DoWork;
+            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
+            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;
             // 
             // Form1
             // 
@@ -77,5 +87,6 @@
         private ProgressBar progressBar1;
         private Button button1;
         private Label label1;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
