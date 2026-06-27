@@ -53,3 +53,154 @@ description: "筆記 C# Delegate 進階應用方式。"
 **適用對象**：
 
 適合已掌握 C# 基礎，想進一步跨越到資深開發者（Senior Developer）階級、或是想深入理解 .NET 底層設計與軟體架構模式的中階工程師。
+
+這段影片在 11:31 到 17:09 之間主要介紹了 **事件型非同步模式 (Event-based Asynchronous Pattern, EAP)** 及其在 .NET 中的應用與委派的關係。以下是摘要整理：
+
+## 事件型非同步模式 (Event-base Asynchronous Pattern, EAP) 簡介
+
+* **背景**：此模式於 .NET 2.0 引入，旨在解決 .NET 1.0 非同步程式模型（APM）的不足。
+* **核心目標**：利用「事件」來通知非同步操作的完成，確保主執行緒（Main Thread）保持回應，避免介面凍結（Blocking）。
+* **執行流程**：
+  1. 用戶端呼叫一個方法來啟動非同步操作。
+  2. 該方法立即回傳（不阻塞呼叫者）。
+  3. 操作在背景執行緒或執行緒池（Thread Pool）中執行。
+  4. 操作完成後（成功、失敗或取消），會觸發一個事件。
+  5. 用戶端透過處理該事件來取得結果或處理錯誤。
+
+### 範例──Windows Forms(`BackgroundWorker`)
+
+模擬網路下載進度顯示：
+
+從 Visual Studio 的 ToolBox（工具箱）將 `BackgroundWorker` 等元件拖曳到設計介面時，Visual Studio 會自動在 `Form1.Designer.cs` 中幫生成它的宣告與初始化程式碼（預設名稱為 `backgroundWorker1`）。
+
+跟著以下步驟來完成：
+
+---
+
+#### 第一步：透過屬性視窗設定 BackgroundWorker
+
+您不需要在程式碼中手動寫 `WorkerReportsProgress = true` 等設定。請在 Visual Studio 的設計畫面（Form1.cs [Design]）中：
+
+1. 點擊畫面下方的 **`backgroundWorker1`** 元件。
+2. 在右下角的 **Properties（屬性）視窗**中，找到以下兩個屬性並將它們改為 **`True`**：
+   * **`WorkerReportsProgress`** $\rightarrow$ 設為 `True`（允許回報進度）
+   * **`WorkerSupportsCancellation`** $\rightarrow$ 設為 `True`（支援中途取消）
+
+---
+
+#### 第二步：自動產生事件處理方法
+
+一樣在右下角的屬性視窗中：
+
+1. 點擊屬性視窗上方的 **「閃電」圖示**（Events，事件）。
+2. 找到 **`DoWork`**，在它右邊的空白欄位**按兩下滑鼠左鍵**。VS 會自動在 `Form1.cs` 中產生 `backgroundWorker1_DoWork` 方法，並自動註冊事件。
+3. 用同樣的方法，在 **`ProgressChanged`** 和 **`RunWorkerCompleted`** 右邊也各**按兩下滑鼠左鍵**。
+
+完成後，VS 會在 `Form1.cs` 中產生三個空的事件方法。
+
+---
+
+#### 第三步：撰寫按鈕點擊事件
+
+請回到 `Form1.cs`，現在只需要撰寫當點擊 `button1` 時的處理邏輯（請在 Form 設計畫面雙擊 `button1` 來產生點擊事件）：
+
+```csharp
+private void button1_Click(object sender, EventArgs e)
+{
+    if (backgroundWorker1.IsBusy)
+    {
+        // 避免使用者重複取消
+        button1.Enabled = false;
+        // 取消背景工作
+        backgroundWorker1.CancelAsync();
+    }
+    else 
+    {
+        button1.Text = "Cancel";
+        progressBar1.Value = 0;
+        label1.Text = $"{progressBar1.Value}%";
+
+        // 啟動背景工作
+        backgroundWorker1.RunWorkerAsync();
+    }
+}
+```
+
+---
+
+#### 第四步：填入剛剛自動產生的三個事件程式碼
+
+Step 1. 背景工作（`DoWork`）
+
+```csharp
+private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+{
+    BackgroundWorker? worker = sender as BackgroundWorker;
+    if (worker == null) return;
+
+    for (int i = 1; i <= 100; i++)
+    {
+        // 檢查是否取消
+        if (worker.CancellationPending)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        // 模擬下載延遲
+        Thread.Sleep(100);
+
+        // 回報進度
+        worker.ReportProgress(i);
+    }
+}
+```
+
+Step 2. 進度更新（`ProgressChanged`）
+
+```csharp
+private void backgroundWorker1_ProgressChanged(object sender, System.ComponentModel.ProgressChangedEventArgs e)
+{
+    progressBar1.Value = e.ProgressPercentage;
+    label1.Text = $"{e.ProgressPercentage}%";
+}
+```
+
+Step 3. 工作結束（`RunWorkerCompleted`）
+
+```csharp
+private void backgroundWorker1_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
+{
+    button1.Enabled = true;
+    button1.Text = "OK";
+
+    if (e.Error != null)
+    {
+        MessageBox.Show($"下載過程發生錯誤：{e.Error.Message}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+    else if (e.Cancelled)
+    {
+        progressBar1.Value = 0;
+        label1.Text = "0%";
+        MessageBox.Show("下載已被取消！", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+    else
+    {
+        MessageBox.Show("下載完成！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+}
+```
+
+---
+
+簡單回顧一下這次練習中最核心的兩個 C# 觀念，這對未來開發會非常有幫助：
+
+1. **事件與委派（Events & Delegates）的應用**：
+   因為專案資料夾名稱是 `P03_AdvancedDelegates`，其實剛剛使用的 `backgroundWorker1.DoWork += ...` 語法，背後正是 C# 的**委派（Delegate）**在運作！
+   * `DoWork` 事件背後使用的是 `DoWorkEventHandler` 委派。
+   * `ProgressChanged` 使用的是 `ProgressChangedEventHandler` 委派。
+   * `RunWorkerCompleted` 使用的是 `RunWorkerCompletedEventHandler` 委派。
+   Visual Studio 幫拖曳產生程式碼時，其實就是在幫建立這些委派的實例，並將它們綁定到寫的方法上。
+
+2. **跨執行緒安全（Thread Safety）**：
+   學到了最重要的一點：**不能在背景執行緒（`DoWork`）直接修改 UI 的控制項**。透過 `ReportProgress` 方法與 `ProgressChanged` 事件的「接力」，程式安全地把資料從背景執行緒傳回 UI 執行緒。這是多執行緒開發中最經典的設計模式之一。
