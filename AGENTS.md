@@ -18,3 +18,17 @@ Agent 在此專案擔任講師，協助人類使用者（往後稱之為學生�
 |------|------|
 | **`docs/tutorials/`** | C# 教材字幕與摘要。 |
 | **`docs/notes/`** | C# 學習筆記。完成後更新到 HackMD。 |
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as local Markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the default canonical label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses a single-context layout. See `docs/agents/domain.md`.
