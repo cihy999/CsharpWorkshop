@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>List 基礎速查</title><link rel="stylesheet" href="../assets/course.css"></head><body><main><header><div class="eyebrow">C# WORKSHOP / REFERENCE</div><h1>List 基礎速查</h1><p class="meta">.NET 10 · 查證日期 2026-10-24</p><nav><a href="../lessons/0001-list-basics.html#start">回到課程</a></nav></header>
+<h2>四個動作</h2><pre><code>List&lt;int&gt; numbers = new List&lt;int&gt; { 10, 20, 30 };
+numbers.Add(40);      // 尾端新增：10, 20, 30, 40
+int x = numbers[1];    // 讀第二個值：20
+numbers[1] = 25;       // 替換第二個值，數量不變
+
+foreach (int number in numbers)
+{
+    Console.WriteLine(number); // 依序輸出 10, 25, 30, 40
+}</code></pre>
+<h2 id="glossary">用語</h2><table><thead><tr><th>名稱</th><th>本課含義</th></tr></thead><tbody><tr><td>清單 List&lt;int&gt;</td><td>保存多個 int 的集合。</td></tr><tr><td>元素</td><td>清單中保存的一個值。</td></tr><tr><td>索引 index</td><td>從 0 開始的位置編號；第二個位置是 1。</td></tr><tr><td>走訪／列舉</td><td>逐一取得元素；本例用 foreach 走訪 List。</td></tr></tbody></table>
+<h2>邊界</h2><p>三個元素時，有效索引是 0、1、2。此時讀取或寫入 <code>numbers[3]</code> 都會擲出 <code>ArgumentOutOfRangeException</code>；不能藉由寫入不存在的索引新增元素。空清單不能讀索引 0。</p>
+<footer><p>官方來源：<a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.add?view=net-10.0">Add</a> · <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.item?view=net-10.0">索引讀寫與範圍</a> · <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/iteration-statements#the-foreach-statement">foreach</a></p><p><a href="../lessons/0001-list-basics.html#change">回到修改練習</a>。有疑問時，隨時回聊天問講師。</p></footer></main></body></html>

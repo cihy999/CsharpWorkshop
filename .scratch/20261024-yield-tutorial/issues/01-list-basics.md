@@ -61,6 +61,8 @@ List<int> 建立、Add、索引及 foreach；先不引入 yield 或介面細節�
 
 ## Comments（續）
 
+- 2026-10-24：依學生指定參考 teach skill，新增 [HTML 短課程](../course/01-list-basics/lessons/0001-list-basics.html)、即時回饋元件與 [速查頁](../course/01-list-basics/reference/list-basics.html)。目的沿用既有 spec；依專案規範不建立個人學習紀錄，Ticket 維持進行中。
+
 - 2026-10-24：依學生更正，Ticket 01 仍在進行，狀態改為 `claimed`。前次紀錄中的「驗收完成」僅代表草稿曾通過執行檢查，不作結案依據。課程教材、範例與後續課程內容先存放於 `.scratch/20261024-yield-tutorial/`；已撤回正式索引異動，正式 yield 筆記還原原文。保留已實測項目的勾選，正式歸檔項目改回待辦。
 
 - 2026-10-24：依學生指定，第一單元教材與示範專案集中於 `course/01-list-basics/`，同步修正連結與執行指令；Ticket 01 維持進行中。

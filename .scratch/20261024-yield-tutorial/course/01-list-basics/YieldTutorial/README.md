@@ -2,6 +2,8 @@
 
 教材：[主線筆記](../yield筆記.md#unit-01)。
 
+開始上課：[HTML 短課程](../lessons/0001-list-basics.html)；複習：[List 基礎速查](../reference/list-basics.html)。
+
 目標框架：`net10.0`。2026-10-24 確認本機 SDK 為 `10.0.402`，依可用 SDK 選用 .NET 10；未修改既有範例框架。無額外 NuGet 套件。
 
 從 repo 根目錄執行：
