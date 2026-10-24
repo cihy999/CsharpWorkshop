@@ -48,6 +48,8 @@ Category: enhancement
 
 ## Implementation Decisions
 
+- 2026-10-24 作法調整：Ticket 01 仍在進行。課程教材與範例先集中於 `.scratch/20261024-yield-tutorial/`，其中第一單元教材與示範專案集中於 `course/01-list-basics/`，教材草稿為 `course/01-list-basics/yield筆記.md`，Console 專案為 `course/01-list-basics/YieldTutorial/`。後續課程內容亦先置於此工作區；正式歸檔前維持原有知識庫筆記與索引，以下正式分類與索引規劃於整理完成時再執行。
+
 - 使用既有用語：學習地圖、教材 spec、課程 Ticket。
 - 一篇主線筆記與一個 Console 示範專案，專案內依單元區分範例，不為每單元建立獨立專案。
 - 主線順序與邊界如下：

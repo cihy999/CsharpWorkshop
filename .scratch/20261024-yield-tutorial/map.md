@@ -1,6 +1,6 @@
 # yield 學習地圖
 
-目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 與課程 Ticket 已發布（ready-for-agent）。尚未開始教材實作。
+目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 進行中（claimed），已有教材草稿與共用 Console 專案，其餘課程 Ticket 尚待製作。課程內容先集中在本暫存工作區。
 
 ## Notes
 
@@ -8,6 +8,8 @@
 - 地圖描述教材的概念與相依關係，不記錄個人學習進度。
 
 ## Decisions-so-far
+
+2026-10-24 教材準備與作法調整：[01 List 基礎](issues/01-list-basics.md) 仍在進行，採 `net10.0` 共用 Console 入口，示範與修改題解答已實測。依學生要求，教材草稿放在 [yield 筆記](course/01-list-basics/yield筆記.md)，共用專案放在 [YieldTutorial](course/01-list-basics/YieldTutorial/README.md)，後續課程內容也先留在本工作區；正式筆記保留原文，暫不列入正式查詢索引。整理完成後再歸檔。
 
 2026-10-24 第一輪：使用者確認 Q1、Q2、Q3 全部採建議。
 
