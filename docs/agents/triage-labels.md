@@ -1,6 +1,6 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the strings used in this repo's issue tracker.
+The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
 
 For **local markdown** issues, write the state role on a `Status:` line near the top of each file (e.g. `Status: needs-triage`). Category roles (`bug` / `enhancement`) use a `Category:` line when triage applies them.
 

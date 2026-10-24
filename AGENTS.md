@@ -22,7 +22,7 @@ Agent 在此專案擔任講師，協助人類使用者（往後稱之為學生�
 
 ### Issue tracker
 
-Issues 以 `.scratch/<feature-slug>/` 下的 Markdown 檔案追蹤。見 `docs/agents/issue-tracker.md`。
+Issues 與 specs 以 `.scratch/` 下的 Local Markdown 檔案追蹤；讀取、建立或更新任務前，先讀取 `docs/agents/issue-tracker.md`，並依 README 的暫存工作區規則命名目錄。
 
 ### Triage labels
 

@@ -16,6 +16,7 @@ C#／.NET 知識庫，提供概念查詢、技術比較、問題解法與可執�
 CsharpWorkshop/
 ├── README.md                  # 知識庫入口、分類規則與查詢索引
 ├── AGENTS.md                  # 講師行為規範與知識庫維護指示
+├── .scratch/                  # 非 main 分支上的處理中專案與暫時筆記
 ├── docs/
 │   ├── topics/                # 依主要知識領域歸檔的文章
 │   │   ├── csharp/            # 語法、型別、方法、物件、委派與事件
@@ -42,6 +43,17 @@ CsharpWorkshop/
 - 以 repo 內容作為主要版本，HackMD 作為發布副本。
 
 2026 roadmap 用於檢查知識涵蓋範圍與整理優先順序。後續可依實際內容增加 `concurrency`、`networking`、`data`、`operations` 等領域，涵蓋並發、網路、資料一致性與效能營運；不預先建立空目錄或學習進度表。
+
+### 本專案擴充規則：暫存工作區
+
+以下是 CsharpWorkshop 的擴充規則，與 Matt skills 的 tracker 設定分開維護。
+
+- 任務、規格、狀態、討論與相依關係以 `.scratch/` 下的 Local Markdown 檔案追蹤，檔案配置見 `docs/agents/issue-tracker.md`；同一工作目錄也可存放處理中的專案、尚未整理成示範的程式與暫時筆記。
+- 每個工作目錄使用 `.scratch/YYYYMMDD-<feature-slug>/`，日期採建立當天（Asia/Taipei），例如 `.scratch/20261024-yield-tutorial/`。Matt tracker 文件中的 `<feature-slug>` 或 `<effort>` 在本專案皆使用含日期前綴的目錄名稱。
+- `.scratch/` 可以 commit 到非 `main` 分支，因此不加入 `.gitignore`。合併進 `main` 前，檢查合併結果，確保不包含 `.scratch/` 下的檔案；分支中的 Git 歷史可以保留。
+- 跨裝置接續工作時，先 commit 並 push 工作分支，再於另一台裝置取得同一分支；未提交或僅存在本機的內容不會隨 Git 同步。
+- 整理完成後，依上方分類規則將正式筆記或示範專案移入 `docs/topics/`、`samples/` 或 `projects/`，同步更新本頁索引、連結與專案參照。暫存內容不列入正式知識庫索引。
+- 確認正式內容完整後，刪除對應的 `.scratch/YYYYMMDD-<feature-slug>/`，包含其中的任務與討論檔案，不保留工作目錄副本；過往紀錄可從已提交的 Git 歷史查閱。
 
 ## 主題索引
 
