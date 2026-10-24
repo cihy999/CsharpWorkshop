@@ -48,6 +48,12 @@ Category: enhancement
 
 ## Implementation Decisions
 
+- 2026-10-24 最後驗收：依學生要求完成 [Ticket 01](issues/01-list-basics.md#answer) 的調整後驗收，標為 resolved；以下「進行中／供檢視」敘述保留為歷次決策脈絡。教材仍留在 `course/01-list-basics/`，正式歸檔由 Ticket 10 追蹤；本次尚未開始 Ticket 02。
+
+- 2026-10-24 補充歸檔範圍：第一單元課堂延伸的「走訪」、for／foreach 選擇與 List<int> 記憶體配置（含 Count／Capacity、擴充複製、舊陣列回收與預留容量）也需整理為正式知識內容，由 [Ticket 10](issues/10-publish-course.md) 追蹤；原始課堂筆記保留原文，正式文章不以個人作答或學習進度呈現。
+
+- 2026-10-24 驗收條件調整版：單元 Ticket 的完成條件以暫存工作區內教材與示範可用、連結正確且不列入正式索引為準；九個單元完成後的正式歸檔、索引更新及暫存清理由 [Ticket 10](issues/10-publish-course.md) 統一追蹤。此整理工作不阻擋單元結案，目前先供學生檢視，Ticket 01 尚未結案。
+
 - 2026-10-24 作法調整：Ticket 01 仍在進行。課程教材與範例先集中於 `.scratch/20261024-yield-tutorial/`，其中第一單元教材與示範專案集中於 `course/01-list-basics/`，教材草稿為 `course/01-list-basics/yield筆記.md`，Console 專案為 `course/01-list-basics/YieldTutorial/`。後續課程內容亦先置於此工作區；正式歸檔前維持原有知識庫筆記與索引，以下正式分類與索引規劃於整理完成時再執行。
 
 - 使用既有用語：學習地圖、教材 spec、課程 Ticket。

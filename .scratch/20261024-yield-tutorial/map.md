@@ -1,6 +1,6 @@
 # yield 學習地圖
 
-目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 進行中（claimed），已有教材草稿與共用 Console 專案，其餘課程 Ticket 尚待製作。課程內容先集中在本暫存工作區。
+目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 已完成最後驗收（resolved），Ticket 02 尚未開始。課程內容先集中在本暫存工作區，整套正式歸檔另由 Ticket 10 追蹤。
 
 ## Notes
 
@@ -8,6 +8,12 @@
 - 地圖描述教材的概念與相依關係，不記錄個人學習進度。
 
 ## Decisions-so-far
+
+2026-10-24 第一單元結案：[Ticket 01 最後驗收](issues/01-list-basics.md#answer) 全部通過並標為 resolved。共用專案建置成功；示範、解答、預設入口、HTML 預測題、11 個互動回饋邏輯情境與 29 個本機連結／錨點核對通過。教材保留於暫存目錄，延伸知識及正式歸檔由 Ticket 10 追蹤；未開始 Ticket 02。
+
+2026-10-24 補充知識歸檔：學生要求「走訪」與 List<int> 記憶體配置話題也納入正式知識庫。已在 [Ticket 10](issues/10-publish-course.md) 明列整理、官方查證與查詢入口要求，並由 [Ticket 01](issues/01-list-basics.md) 連到原始課堂筆記；本次不修改原始筆記，也尚未執行正式歸檔。
+
+2026-10-24 驗收條件調整版：[Ticket 01](issues/01-list-basics.md) 以暫存教材完整可用為結案範圍；整套正式歸檔另列 [Ticket 10](issues/10-publish-course.md)，等待九個單元完成後處理。Ticket 10 不阻擋各單元結案。目前僅供檢視，Ticket 01 維持進行中，未開始下一單元。
 
 2026-10-24 教材準備與作法調整：[01 List 基礎](issues/01-list-basics.md) 仍在進行，採 `net10.0` 共用 Console 入口，示範與修改題解答已實測。依學生要求，教材草稿放在 [yield 筆記](course/01-list-basics/yield筆記.md)，共用專案放在 [YieldTutorial](course/01-list-basics/YieldTutorial/README.md)，後續課程內容也先留在本工作區；正式筆記保留原文，暫不列入正式查詢索引。整理完成後再歸檔。
 
