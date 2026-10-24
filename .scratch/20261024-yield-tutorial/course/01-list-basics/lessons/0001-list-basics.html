@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>01 · List 如何保存與提供多個值？</title><link rel="stylesheet" href="../assets/course.css"><script src="../assets/quiz.js" defer></script></head>
+<body><main>
+<header><div class="eyebrow">C# WORKSHOP / 01</div><h1>保存一份清單，<br>再讀出其中的值。</h1><p>這一課只做一件事：分清楚 List 的保存、新增、索引與走訪。</p><p class="meta">約 8 分鐘 · .NET 10 · 教材草稿 · 來源查證 2026-10-24</p><nav><a href="#start">開始</a><a href="#predict">預測輸出</a><a href="#change">修改練習</a><a href="../reference/list-basics.html">速查表</a></nav></header>
+<section id="start"><h2>01 / 先保存三個整數</h2><p>之後我們要比較 List 與 yield 如何提供多項回合事實。先用數字建立直覺：清單可以保存多個值，讓後續程式讀取。</p>
+<pre><code>List&lt;int&gt; numbers = new List&lt;int&gt; { 10, 20, 30 };</code></pre>
+<p><code>List&lt;int&gt;</code> 暫時讀作「保存 int 的清單」。<code>numbers</code> 是變數名稱；右邊建立一份起初包含 10、20、30 的清單。</p>
+<table><caption>位置從 0 開始編號</caption><thead><tr><th>索引</th><th>0</th><th>1</th><th>2</th></tr></thead><tbody><tr><th>值</th><td>10</td><td>20</td><td>30</td></tr></tbody></table>
+<p><code>numbers[1]</code> 讀取第二個元素，所以得到 20。索引指定的是位置。<a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.item?view=net-10.0">官方：索引讀寫</a></p>
+<form data-answer="b" data-feedback="索引 0 是第一個位置，索引 1 是第二個位置，所以讀到 20。"><fieldset><legend>先試一下：numbers[1] 是多少？</legend><label><input type="radio" name="index" value="a">10</label><label><input type="radio" name="index" value="b">20</label><label><input type="radio" name="index" value="c">30</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section><h2>02 / 新增一個，再逐一讀取</h2>
+<pre><code>numbers.Add(40);
+
+foreach (int number in numbers)
+{
+    Console.WriteLine(number);
+}</code></pre>
+<p><code>Add(40)</code> 把 40 加到尾端，現在第四個位置的索引是 3。<a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.add?view=net-10.0">官方：Add</a></p>
+<p><code>foreach</code> 在這份清單中依序讀取元素，每次以 <code>number</code> 接住一個值；<code>Console.WriteLine</code> 將它輸出一行。這段程式只讀取、輸出，沒有移除元素。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/iteration-statements#the-foreach-statement">官方：foreach</a></p>
+<form data-answer="a" data-feedback="迴圈只輸出數字，沒有移除元素；清單仍有四個整數。"><fieldset><legend>走訪結束後，清單有幾個元素？</legend><label><input type="radio" name="count" value="a">4</label><label><input type="radio" name="count" value="b">0</label><label><input type="radio" name="count" value="c">3</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="predict"><h2>03 / 先預測，再執行</h2><p>把三個動作接起來。先讀程式，想好每一行輸出，再按核對。</p>
+<pre><code>List&lt;int&gt; numbers = new List&lt;int&gt; { 10, 20, 30 };
+numbers.Add(40);
+
+Console.WriteLine(numbers[0]);
+Console.WriteLine(numbers[3]);
+
+foreach (int number in numbers)
+{
+    Console.WriteLine(number);
+}</code></pre>
+<form data-expected="10 40 10 20 30 40" data-feedback="前兩行依索引輸出 10、40；接著 foreach 依序輸出 10、20、30、40。"><label for="prediction">依序輸入全部數字，每行一個（也可用空格或逗號分隔）。</label><textarea id="prediction" spellcheck="false"></textarea><button type="submit">核對預測</button><p role="status" class="feedback"></p></form>
+<noscript><p>互動回饋需要 JavaScript。你也可以在紙上作答，再展開下方解答。</p></noscript>
+<details><summary>預測題解答與原因</summary><pre>10
+40
+10
+20
+30
+40</pre><p>先按索引讀兩個值，再走訪四個元素。索引讀取不會把值取走，所以 10 與 40 會再次出現在走訪輸出。</p></details>
+<h3>執行真正的 C# 範例</h3><p>開啟本單元的 <code>YieldTutorial</code> 資料夾，在該資料夾的終端機執行：</p><pre><code>dotnet run -- 01</code></pre><p>這個完整示範還會先列出「新增前」的三個值，並在各段加上標題。核對它的「索引 0」、「索引 3」與「新增後」三段，是否符合你的預測。<a href="../YieldTutorial/README.md">完整輸出與 repo 根目錄執行指令</a></p>
+</section>
+<section id="change"><h2>04 / 自己改一次</h2><p>在 <code>ListBasics.cs</code> 的 <code>Run()</code> 中，找到 <code>numbers.Add(40);</code>，在它後面、最後一次走訪前加入兩行：</p><ol><li>將第二個元素改為 25。</li><li>將 50 新增到清單尾端。</li></ol><p>先想好清單最後的五個值，再動手修改、重新執行 <code>dotnet run -- 01</code>。</p>
+<details><summary>修改題參考解</summary><pre><code>numbers[1] = 25;
+numbers.Add(50);</code></pre><p>「新增後」一段會依序輸出 10、25、30、40、50。索引賦值替換既有位置；Add 才會新增元素。第一次走訪發生在修改前，因此「新增前」仍為 10、20、30。</p><p>專案另附獨立解答：<code>dotnet run -- 01-answer</code>，會輸出修改後的索引 1 與完整清單。</p></details>
+<h3>合上教材，用自己的話說</h3><p>「清單保存資料」、「索引取值」與「foreach 走訪」各在做什麼？你可以把解釋貼回聊天，我會依你的說法補充。</p><details><summary>解釋題判準</summary><p>清單保存多個值；索引指定一個位置來讀寫；foreach 逐一取得元素。能指出對應程式碼，並說明本例讀取不會移除元素即可。</p></details>
+<p class="callout">稍後或隔天，再不看範例寫一次「建立三個整數 → 新增一個 → 讀第二個 → 走訪全部」。忘記時再查速查表。</p>
+</section>
+<footer><p>主要閱讀：<a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.add?view=net-10.0">Microsoft Learn：List.Add</a>，先看 Definition 與新增位置即可。</p><nav><a href="../reference/list-basics.html#glossary">語法與用語速查</a><a href="../yield筆記.md#unit-01">完整 Markdown 草稿</a></nav><p>任何一行不清楚，都可以回聊天問我。此頁的練習只顯示當下回饋，重新整理即清除。</p></footer>
+</main></body></html>
