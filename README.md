@@ -17,6 +17,14 @@ CsharpWorkshop/
 ├── README.md                  # 知識庫入口、分類規則與查詢索引
 ├── AGENTS.md                  # 講師行為規範與知識庫維護指示
 ├── .scratch/                  # 非 main 分支上的處理中專案與暫時筆記
+│   └── YYYYMMDD-<feature-slug>/
+│       ├── spec.md            # 工作規格
+│       ├── map.md             # 決策與任務入口（需要時建立）
+│       ├── issues/            # 每張 Ticket 各一個 Markdown 檔
+│       ├── course/            # 處理中的課程教材與示範（課程工作使用）
+│       │   └── <NN>-<slug>/   # 單元教材、速查頁與相關資源
+│       └── notes/
+│           └── note-*.md      # 學生個人課堂筆記
 ├── docs/
 │   ├── topics/                # 依主要知識領域歸檔的文章
 │   │   ├── csharp/            # 語法、型別、方法、物件、委派與事件
@@ -53,7 +61,7 @@ CsharpWorkshop/
 - `.scratch/` 可以 commit 到非 `main` 分支，因此不加入 `.gitignore`。合併進 `main` 前，檢查合併結果，確保不包含 `.scratch/` 下的檔案；分支中的 Git 歷史可以保留。
 - 跨裝置接續工作時，先 commit 並 push 工作分支，再於另一台裝置取得同一分支；未提交或僅存在本機的內容不會隨 Git 同步。
 - 整理完成後，依上方分類規則將正式筆記或示範專案移入 `docs/topics/`、`samples/` 或 `projects/`，同步更新本頁索引、連結與專案參照。暫存內容不列入正式知識庫索引。
-- 確認正式內容完整後，刪除對應的 `.scratch/YYYYMMDD-<feature-slug>/`，包含其中的任務與討論檔案，不保留工作目錄副本；過往紀錄可從已提交的 Git 歷史查閱。
+- 正式內容完整後，暫存教材、任務與討論檔案進入清理階段；Agent 的操作限制與個人筆記保護見 [AGENTS.md](AGENTS.md#personal-notes)。過往紀錄可從已提交的 Git 歷史查閱。
 
 ## 主題索引
 
