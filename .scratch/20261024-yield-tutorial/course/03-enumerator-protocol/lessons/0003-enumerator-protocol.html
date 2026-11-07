@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>03 · foreach 如何取得下一個值？</title><link rel="stylesheet" href="../../01-list-basics/assets/course.css"><script src="../../01-list-basics/assets/quiz.js" defer></script></head>
+<body><main>
+<header><div class="eyebrow">C# WORKSHOP / 03</div><h1>先問「還有下一個嗎？」<br>再讀它。</h1><p>這一課只做一件事：不用 <code>foreach</code>，親手向列舉器要下一個值，並知道什麼時候讀 <code>Current</code> 才算數。</p><p class="meta">約 12 分鐘 · .NET 10 · 教材草稿 · 來源查證 2026-11-07</p><nav><a href="#roles">開始</a><a href="#predict">預測輸出</a><a href="#change">修改練習</a><a href="../reference/enumerator-protocol.html">速查表</a><a href="../../02-ienumerable-contract/lessons/0002-ienumerable-contract.html">上一課</a></nav></header>
+<section id="roles"><h2>01 / 兩個角色</h2><p>上一課說 <code>IEnumerable&lt;int&gt;</code> 約定「可以走訪」。真正走訪時，分成兩個角色：</p>
+<table><thead><tr><th>角色</th><th>型別</th><th>負責</th></tr></thead><tbody><tr><td>可列舉序列</td><td><code>IEnumerable&lt;int&gt;</code></td><td>用 <code>GetEnumerator()</code> 交出一個新的列舉器</td></tr><tr><td>列舉器</td><td><code>IEnumerator&lt;int&gt;</code></td><td>記住目前位置；<code>MoveNext()</code> 前進、<code>Current</code> 讀值、<code>Dispose()</code> 收尾</td></tr></tbody></table>
+<p>序列像一本書，列舉器像書籤：同一本書可以同時夾好幾張書籤，每張各自記得讀到哪。<a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1?view=net-10.0#remarks">官方：IEnumerator&lt;T&gt; 備註</a></p>
+<form data-answer="a" data-feedback="列舉器剛建立時位於第一個元素之前，要先 MoveNext 一次才到第一個元素。"><fieldset><legend>先猜猜看：剛呼叫 GetEnumerator() 時，列舉器在哪裡？</legend><label><input type="radio" name="start" value="a">第一個元素之前</label><label><input type="radio" name="start" value="b">第一個元素上面</label><label><input type="radio" name="start" value="c">最後元素的後面</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="movenext"><h2>02 / MoveNext 決定能不能讀 Current</h2><p><code>MoveNext()</code> 往前移一格：移到一個元素上就回傳 True；已經越過最後一個元素就回傳 False，之後再呼叫也一直是 False。</p>
+<form data-answer="c" data-feedback="三次 True 各移到一個元素；第四次越過結尾才回傳 False。"><fieldset><legend>序列有三個元素，第幾次 MoveNext() 會第一次回傳 False？</legend><label><input type="radio" name="end" value="a">第三次</label><label><input type="radio" name="end" value="b">第五次</label><label><input type="radio" name="end" value="c">第四次</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p>以 <code>10, 20, 30</code> 為例，每次 <code>MoveNext()</code> 後的狀態：</p>
+<table><thead><tr><th>動作</th><th>回傳</th><th>位置</th><th>Current</th></tr></thead><tbody><tr><td><code>GetEnumerator()</code></td><td>—</td><td>第一個之前</td><td>未定義</td></tr><tr><td>第 1 次 <code>MoveNext()</code></td><td>True</td><td>10</td><td>10</td></tr><tr><td>第 2 次</td><td>True</td><td>20</td><td>20</td></tr><tr><td>第 3 次</td><td>True</td><td>30</td><td>30</td></tr><tr><td>第 4 次</td><td>False</td><td>最後一個之後</td><td>未定義</td></tr><tr><td>第 5 次以後</td><td>False</td><td>仍在結尾</td><td>未定義</td></tr></tbody></table>
+<p>規則只有一句：<strong>最近一次 <code>MoveNext()</code> 回傳 True，才讀 <code>Current</code>。</strong><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerator.movenext?view=net-10.0#remarks">官方：MoveNext</a> · <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1.current?view=net-10.0#remarks">官方：Current</a></p>
+<p>「未定義」是指規格不保證結果，<strong>不是</strong>「會得到 null」。2026-11-07 以 .NET 10 實測，在不合法的時點讀 <code>Current</code>：</p>
+<table><thead><tr><th>列舉器來源</th><th>實測結果</th></tr></thead><tbody><tr><td><code>List&lt;int&gt;</code></td><td>讀到 0</td></tr><tr><td><code>List&lt;string&gt;</code></td><td>讀到 null</td></tr><tr><td><code>int[]</code></td><td>擲出 <code>InvalidOperationException</code></td></tr></tbody></table>
+<p>三種結果都只是特定實作的行為，程式不應依賴任何一種。</p>
+<pre><code>IEnumerator&lt;int&gt; enumerator = numbers.GetEnumerator();
+int a = enumerator.Current;        // A
+
+if (enumerator.MoveNext())
+{
+    int b = enumerator.Current;    // B
+}</code></pre>
+<form data-answer="b" data-feedback="A 在第一次 MoveNext 之前，Current 未定義；B 在 MoveNext 回傳 True 之後，合法。"><fieldset><legend>哪一行讀 Current 的時機合法？</legend><label><input type="radio" name="legal" value="a">只有 A 行</label><label><input type="radio" name="legal" value="b">只有 B 行</label><label><input type="radio" name="legal" value="c">兩行都可以</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="dispose"><h2>03 / 用 using 收尾</h2><p><code>IEnumerator&lt;T&gt;</code> 也實作 <code>IDisposable</code>。有些列舉器背後連著檔案或資料庫，走完要釋放。<code>using</code> 區塊在離開時<strong>一定</strong>呼叫 <code>Dispose()</code>，中途發生例外也一樣。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/using">官方：using</a></p>
+<pre><code>using (IEnumerator&lt;int&gt; enumerator = numbers.GetEnumerator())
+{
+    while (enumerator.MoveNext())
+    {
+        int number = enumerator.Current;
+        Console.WriteLine(number);
+    }
+}</code></pre>
+<p>這段就是 <code>foreach (int number in numbers)</code> 的<strong>概念對照</strong>：C# 規格把 foreach 定義為「取得列舉器 → <code>while (MoveNext())</code> 讀 <code>Current</code> → 在 <code>finally</code> 中 Dispose」。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#1395-the-foreach-statement">C# 規格：foreach</a></p>
+<p class="callout">適用範圍：本例的 <code>numbers</code> 宣告為 <code>IEnumerable&lt;int&gt;</code>。若宣告為 <code>List&lt;int&gt;</code>，編譯器會改用 List 自己的列舉器型別；陣列也另有處理。走訪規則相同，細節不在本課範圍。</p>
+<p>List 的列舉器沒有資源要釋放，所以這一課看不出 Dispose 的效果；單元 6 會用 yield 方法親眼看到清理發生。</p>
+<form data-answer="c" data-feedback="IEnumerator&lt;T&gt; 實作 IDisposable；using 保證離開區塊時呼叫 Dispose。"><fieldset><legend>手動列舉為什麼要放進 using？</legend><label><input type="radio" name="using" value="a">讓序列能夠再走一次</label><label><input type="radio" name="using" value="b">先把序列複製成一份</label><label><input type="radio" name="using" value="c">離開時必呼叫 Dispose</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="predict"><h2>04 / 先預測，再執行</h2><p>先讀程式，想好每一行輸出，再按核對。</p>
+<pre><code>IEnumerable&lt;int&gt; numbers = new List&lt;int&gt; { 10, 20, 30 };
+
+using (IEnumerator&lt;int&gt; enumerator = numbers.GetEnumerator())
+{
+    Console.WriteLine(enumerator.MoveNext());
+    Console.WriteLine(enumerator.Current);
+    Console.WriteLine(enumerator.MoveNext());
+    Console.WriteLine(enumerator.Current);
+    Console.WriteLine(enumerator.MoveNext());
+    Console.WriteLine(enumerator.Current);
+    Console.WriteLine(enumerator.MoveNext());
+}</code></pre>
+<form data-expected="True 10 True 20 True 30 False" data-feedback="每次 MoveNext 回傳 True 後才讀 Current；第四次回傳 False，程式也就不再讀 Current。"><label for="prediction">依序輸入每一行輸出（每行一個，或用空格、逗號分隔；True／False 不分大小寫）。</label><textarea id="prediction" spellcheck="false"></textarea><button type="submit">核對預測</button><p role="status" class="feedback"></p></form>
+<noscript><p>互動回饋需要 JavaScript。你也可以在紙上作答，再展開下方解答。</p></noscript>
+<details><summary>預測題解答與原因</summary><pre>True
+10
+True
+20
+True
+30
+False</pre><p>Console 輸出 bool 時寫成 <code>True</code>／<code>False</code>。三個元素需要第四次 <code>MoveNext()</code> 才知道結束；這段程式在結束後沒有再讀 <code>Current</code>，所有讀取都合法。</p></details>
+<form data-answer="a" data-feedback="空序列第一次 MoveNext 就回傳 False，所以 foreach 主體一次也不執行。"><fieldset><legend>對空的 List 執行 foreach，迴圈主體會執行幾次？</legend><label><input type="radio" name="empty" value="a">零次，直接結束</label><label><input type="radio" name="empty" value="b">一次，讀到 0 值</label><label><input type="radio" name="empty" value="c">擲出例外後停止</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<h3>執行真正的 C# 範例</h3><p>在 <code>.scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial</code> 資料夾的終端機執行：</p><pre><code>dotnet run -- 03</code></pre><p>完整示範比上面多三段：先以 <code>foreach</code> 與手動列舉各走一次 10、20、30，對照兩者相同；「逐次呼叫」段落把回傳值與 <code>Current</code> 寫在同一行，並多呼叫第五次確認仍是 False；最後對空序列各試一次 foreach 與 MoveNext。<a href="../../01-list-basics/YieldTutorial/README.md">完整輸出與 repo 根目錄執行指令</a></p>
+</section>
+<section id="change"><h2>05 / 自己改一次</h2><p>目標：用手動列舉走訪另一組固定資料，並數出 MoveNext 呼叫幾次。</p><ol><li>建立 <code>IEnumerable&lt;int&gt; numbers = new List&lt;int&gt; { 2, 4, 6, 8 };</code>。</li><li>用 <code>using</code> 與 <code>while (enumerator.MoveNext())</code> 走訪，每行輸出「第 n 個：值」。</li><li>迴圈結束後，輸出元素個數與 <code>MoveNext()</code> 的呼叫次數。</li></ol><p>先預測 MoveNext 會被呼叫幾次，再寫程式。可以寫在 <code>EnumeratorProtocol.cs</code> 新增的方法中。</p>
+<details><summary>修改題參考解</summary><pre><code>IEnumerable&lt;int&gt; numbers = new List&lt;int&gt; { 2, 4, 6, 8 };
+int position = 0;
+
+using (IEnumerator&lt;int&gt; enumerator = numbers.GetEnumerator())
+{
+    while (enumerator.MoveNext())
+    {
+        position++;
+        Console.WriteLine("第 " + position + " 個：" + enumerator.Current);
+    }
+}
+
+Console.WriteLine("共 " + position + " 個元素，MoveNext 呼叫 " + (position + 1) + " 次");</code></pre><p>實測輸出：</p><pre>第 1 個：2
+第 2 個：4
+第 3 個：6
+第 4 個：8
+共 4 個元素，MoveNext 呼叫 5 次</pre><p>四次 True 各帶來一個元素，再一次 False 結束迴圈，共五次。專案另附獨立解答：<code>dotnet run -- 03-answer</code>。</p></details>
+<h3>合上教材，用自己的話說</h3><p>下面有兩處讀取 <code>Current</code> 的時機不合法。指出是哪兩處、為什麼，再說明手動列舉為什麼要放進 <code>using</code>。你可以把解釋貼回聊天，我會依你的說法補充。</p>
+<pre><code>using (IEnumerator&lt;int&gt; enumerator = numbers.GetEnumerator())
+{
+    Console.WriteLine(enumerator.Current);      // A
+
+    while (enumerator.MoveNext())
+    {
+        Console.WriteLine(enumerator.Current);  // B
+    }
+
+    Console.WriteLine(enumerator.Current);      // C
+}</code></pre>
+<details><summary>解釋題判準</summary><p>能說出三點即可：A 在第一次 <code>MoveNext()</code> 之前，列舉器還在第一個元素之前；C 在 <code>while</code> 結束後，最近一次 <code>MoveNext()</code> 已回傳 False。A、C 的 <code>Current</code> 都未定義，可能讀到 0、null 或擲出例外，不能說一定是 null；B 在回傳 True 後讀取，是合法的。<code>IEnumerator&lt;T&gt;</code> 實作 <code>IDisposable</code>，<code>using</code> 保證離開區塊時呼叫 <code>Dispose()</code>，即使中途發生例外。</p></details>
+<p class="callout">稍後或隔天，不看教材在紙上寫出 <code>foreach (int n in numbers)</code> 的手動版本：包含 <code>using</code>、<code>MoveNext</code> 與 <code>Current</code>。寫不出來時再查速查表。</p>
+</section>
+<footer><p>主要閱讀：<a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1?view=net-10.0#remarks">Microsoft Learn：IEnumerator&lt;T&gt; 的 Remarks</a>，讀到 Reset 那段之前即可。</p><p>邊界：本課不手寫列舉器類別；<code>Reset()</code> 為 COM 互通而設，要重新走訪就再呼叫一次 <code>GetEnumerator()</code>。列舉期間修改集合留到單元 7。</p><nav><a href="../reference/enumerator-protocol.html">列舉器協定速查</a><a href="../../01-list-basics/yield筆記.md#unit-03">完整 Markdown 草稿</a><a href="../../02-ienumerable-contract/lessons/0002-ienumerable-contract.html">上一課：IEnumerable 約定</a></nav><p>任何一行不清楚，都可以回聊天問我。此頁的練習只顯示當下回饋，重新整理即清除。</p></footer>
+</main></body></html>

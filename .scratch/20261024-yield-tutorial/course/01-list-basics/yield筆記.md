@@ -1,8 +1,8 @@
 # 從 List 到 yield
 
-開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)。本文件保留完整草稿與原始素材。
+開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)。本文件保留完整草稿與原始素材。
 
-本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一、二單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
+本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至三單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
 
 範例專案：[YieldTutorial](YieldTutorial/)。
 
@@ -354,6 +354,242 @@ sequence 列舉：
 - 本單元的修改都發生在列舉**之前**。在 `foreach` 走訪 List 的過程中修改同一份 List，下一次取值會擲出 `InvalidOperationException`；這與「兩次列舉之間修改」不同，留到單元 7 區分。[官方：List&lt;T&gt;.GetEnumerator 備註](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.getenumerator?view=net-10.0#remarks)。
 - 並非所有 `IEnumerable<int>` 背後都是 List；陣列也實作它，yield 方法則每次列舉時才產生元素。呼叫端只依賴「可以走訪」的約定。
 - 不在本單元範圍：自訂泛型型別、型別條件約束、共變數（`out T`）、明確轉型回 List、LINQ。完整介面語法可參考 [Interface 筆記](<../../../../docs/topics/csharp/C%23筆記 - Interface.md>)。
+
+[下一單元](#unit-03)說明 `IEnumerable<T>` 交出的列舉器如何一次提供一個元素。
+
+<a id="unit-03"></a>
+
+## 單元 3：foreach 如何取得下一個值？
+
+開始上課請開啟 [第三單元 HTML 短課程](../03-enumerator-protocol/lessons/0003-enumerator-protocol.html)；複習可看 [列舉器協定速查](../03-enumerator-protocol/reference/enumerator-protocol.html)。
+
+適用版本：本單元以 .NET 10、SDK 10.0.402 驗證。驗證日期：2026-11-07。
+
+### 簡短說明
+
+上一單元說 `IEnumerable<T>` 約定「可以走訪」。實際走訪時有兩個角色：
+
+| 角色 | 型別 | 負責什麼 |
+|---|---|---|
+| 可列舉序列 | `IEnumerable<int>` | 以 `GetEnumerator()` 交出一個新的列舉器；序列本身不記錄走到哪裡 |
+| 列舉器 | `IEnumerator<int>` | 記住目前位置，以 `MoveNext()` 前進、`Current` 讀取目前元素、`Dispose()` 收尾 |
+
+[官方：IEnumerable&lt;T&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1?view=net-10.0)、[官方：IEnumerator&lt;T&gt;](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1?view=net-10.0)。
+
+**列舉器的位置規則。** 列舉器剛建立時位於**第一個元素之前**，要先呼叫一次 `MoveNext()` 才會移到第一個元素。`MoveNext()` 回傳 `true` 表示成功移到下一個元素；回傳 `false` 表示已經越過最後一個元素，之後再呼叫也會持續回傳 `false`。[官方：MoveNext 備註](https://learn.microsoft.com/en-us/dotnet/api/system.collections.ienumerator.movenext?view=net-10.0#remarks)。
+
+**Current 只在 MoveNext 回傳 true 之後讀。** 官方說明在以下情況 `Current` 是**未定義**的：列舉器剛建立、尚未呼叫 `MoveNext()`；最近一次 `MoveNext()` 回傳 `false`；集合在列舉期間被修改。在兩次 `MoveNext()` 之間，`Current` 保持同一個元素。[官方：IEnumerator&lt;T&gt;.Current 備註](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1.current?view=net-10.0#remarks)。
+
+「未定義」的意思是**規格不保證結果**，不是「會得到 null」。2026-11-07 以 .NET 10 在暫存專案實測，不同列舉器的結果各不相同：
+
+| 讀取 `Current` 的時機 | `List<int>`（`IEnumerator<int>`） | `List<string>` | `int[]` | 透過非泛型 `IEnumerator` 讀 `List<int>` |
+|---|---|---|---|---|
+| 尚未 `MoveNext()` | 讀到 0 | 讀到 null | 擲出 `InvalidOperationException` | 擲出 `InvalidOperationException` |
+| `MoveNext()` 回傳 `false` 之後 | 讀到 0 | 讀到 null | 擲出 `InvalidOperationException` | 擲出 `InvalidOperationException` |
+
+這些是特定實作在指定版本的行為，不是公開約定；程式不應依賴其中任何一種。共用專案只在合法時點讀取 `Current`，以上實測不放入專案。
+
+**用 using 收尾。** `IEnumerator<T>` 同時實作 `IDisposable`，因此有 `Dispose()`。有些列舉器背後連著檔案或資料庫等資源，走訪結束時需要釋放。[官方：IEnumerator&lt;T&gt; 實作者備註](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1?view=net-10.0#notes-to-implementers)。手動列舉時把列舉器放進 `using` 區塊：控制離開區塊時一定呼叫 `Dispose()`，即使區塊內發生例外也一樣。[官方：using 陳述式](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/using)。
+
+List 的列舉器沒有需要釋放的資源，所以本單元看不出 `Dispose()` 的效果；但手動列舉時通常不知道背後是哪一種列舉器，一律用 `using` 才正確。可觀察的清理效果留到單元 6，以 yield 方法的 `finally` 示範。
+
+**foreach 的概念對照。** 以本單元宣告為 `IEnumerable<int>` 的 `numbers` 為例，`foreach (int number in numbers) { ... }` 可以對照成：
+
+```csharp
+using (IEnumerator<int> enumerator = numbers.GetEnumerator())
+{
+    while (enumerator.MoveNext())
+    {
+        int number = enumerator.Current;
+        // 迴圈主體
+    }
+}
+```
+
+C# 規格把 `foreach` 定義為「取得列舉器 → 在 `try` 中以 `while (MoveNext())` 讀取 `Current` → 在 `finally` 中 `Dispose`」；`using` 也是以 `try`／`finally` 呼叫 `Dispose`，因此兩者在本例的效果相同。[C# 規格：foreach 陳述式](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#1395-the-foreach-statement)。
+
+這只是適用本例的概念對照，不是編譯器的逐字輸出。編譯器依變數的宣告型別選擇 `GetEnumerator`：若同一份清單宣告為 `List<int>`，取得的是 [`List<int>.Enumerator`](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.getenumerator?view=net-10.0)，`Dispose` 的寫法也略有不同；陣列與 `Span<T>` 另有處理方式。走訪規則相同，但本單元不展開這些差異。
+
+### 範例
+
+以下是 [EnumeratorProtocol.cs](YieldTutorial/EnumeratorProtocol.cs) 中 `Run()` 的內容：
+
+```csharp
+IEnumerable<int> numbers = new List<int> { 10, 20, 30 };
+
+Console.WriteLine("foreach：");
+foreach (int number in numbers)
+{
+    Console.WriteLine(number);
+}
+
+Console.WriteLine("手動列舉：");
+using (IEnumerator<int> enumerator = numbers.GetEnumerator())
+{
+    while (enumerator.MoveNext())
+    {
+        Console.WriteLine(enumerator.Current);
+    }
+}
+
+Console.WriteLine("逐次呼叫 MoveNext：");
+using (IEnumerator<int> enumerator = numbers.GetEnumerator())
+{
+    // 只在 MoveNext 回傳 True 之後讀取 Current。
+    bool moved = enumerator.MoveNext();
+    Console.WriteLine("第 1 次：" + moved + "，Current = " + enumerator.Current);
+
+    moved = enumerator.MoveNext();
+    Console.WriteLine("第 2 次：" + moved + "，Current = " + enumerator.Current);
+
+    moved = enumerator.MoveNext();
+    Console.WriteLine("第 3 次：" + moved + "，Current = " + enumerator.Current);
+
+    moved = enumerator.MoveNext();
+    Console.WriteLine("第 4 次：" + moved + "，已結束，不讀 Current");
+
+    moved = enumerator.MoveNext();
+    Console.WriteLine("第 5 次：" + moved + "，仍然結束");
+}
+
+IEnumerable<int> empty = new List<int>();
+
+Console.WriteLine("空序列 foreach 開始");
+foreach (int number in empty)
+{
+    Console.WriteLine(number);
+}
+Console.WriteLine("空序列 foreach 結束");
+
+using (IEnumerator<int> enumerator = empty.GetEnumerator())
+{
+    Console.WriteLine("空序列第 1 次 MoveNext：" + enumerator.MoveNext());
+}
+```
+
+「逐次呼叫」段落刻意不用迴圈，逐行寫出五次 `MoveNext()`，方便對照每次的回傳值。`bool` 與字串相接時輸出 `True`／`False`。每次 `GetEnumerator()` 都取得新的列舉器，所以第二、三段都從第一個元素之前重新開始。
+
+### 預測輸出
+
+先不執行程式，寫下你的預測：
+
+1. 「foreach」與「手動列舉」兩段輸出的值與順序相同嗎？
+2. 「逐次呼叫 MoveNext」的五次各回傳什麼？哪幾次之後可以讀 `Current`？
+3. 「空序列 foreach 開始」與「結束」之間有輸出嗎？空序列的第一次 `MoveNext()` 回傳什麼？
+
+### 執行觀察
+
+從 repo 根目錄執行：
+
+```powershell
+dotnet build .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial/YieldTutorial.csproj
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 03
+```
+
+觀察三件事：`foreach` 與手動列舉的結果一致；三個元素需要第四次 `MoveNext()` 才得知結束；空序列第一次就回傳 `False`，`foreach` 主體一次也不執行。
+
+### 修改練習
+
+1. 修改手動列舉，改為走訪固定資料 `2, 4, 6, 8`，保留 `using`。
+2. 在迴圈中以計數變數輸出「第 n 個：值」。
+3. 迴圈結束後輸出元素個數與 `MoveNext()` 的呼叫次數。
+
+先預測 `MoveNext()` 會被呼叫幾次，再修改與執行。可以寫在 `EnumeratorProtocol.cs` 新增的方法中，或直接改 `Run()` 後再還原。
+
+解釋題：下面的程式有兩處讀取 `Current` 的時機不合法，請指出來並說明原因；再說明為什麼手動列舉要放進 `using`。
+
+```csharp
+using (IEnumerator<int> enumerator = numbers.GetEnumerator())
+{
+    Console.WriteLine(enumerator.Current);      // A
+
+    while (enumerator.MoveNext())
+    {
+        Console.WriteLine(enumerator.Current);  // B
+    }
+
+    Console.WriteLine(enumerator.Current);      // C
+}
+```
+
+### 解答與判準
+
+#### 預測題解答
+
+`03` 實測輸出如下：
+
+```text
+foreach：
+10
+20
+30
+手動列舉：
+10
+20
+30
+逐次呼叫 MoveNext：
+第 1 次：True，Current = 10
+第 2 次：True，Current = 20
+第 3 次：True，Current = 30
+第 4 次：False，已結束，不讀 Current
+第 5 次：False，仍然結束
+空序列 foreach 開始
+空序列 foreach 結束
+空序列第 1 次 MoveNext：False
+```
+
+`foreach` 與手動列舉走的是同一套規則，所以值與順序相同。前三次 `MoveNext()` 各移到一個元素，之後才讀 `Current`；第四次越過結尾回傳 `False`，第五次仍是 `False`。空序列第一次 `MoveNext()` 就回傳 `False`，所以 `foreach` 主體不執行，兩行訊息之間沒有輸出。
+
+#### 修改題參考解
+
+以下是同專案 `RunExerciseAnswer()` 的內容，可直接以 `03-answer` 選項執行：
+
+```csharp
+IEnumerable<int> numbers = new List<int> { 2, 4, 6, 8 };
+int position = 0;
+
+using (IEnumerator<int> enumerator = numbers.GetEnumerator())
+{
+    while (enumerator.MoveNext())
+    {
+        position++;
+        Console.WriteLine("第 " + position + " 個：" + enumerator.Current);
+    }
+}
+
+Console.WriteLine("共 " + position + " 個元素，MoveNext 呼叫 " + (position + 1) + " 次");
+```
+
+```powershell
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 03-answer
+```
+
+實測輸出：
+
+```text
+第 1 個：2
+第 2 個：4
+第 3 個：6
+第 4 個：8
+共 4 個元素，MoveNext 呼叫 5 次
+```
+
+四個元素需要四次回傳 `True` 的 `MoveNext()`，再加一次回傳 `False` 才結束迴圈，共五次。`position++` 只在成功移動後執行，所以它等於元素個數。
+
+#### 解釋題判準
+
+能清楚表達以下三點即可，不要求背誦原句：
+
+- A 不合法：列舉器剛建立，位於第一個元素之前，尚未呼叫 `MoveNext()`。
+- C 不合法：`while` 結束代表最近一次 `MoveNext()` 回傳 `false`，列舉器已越過結尾。A 與 C 的 `Current` 都是未定義，實際可能讀到 0、null 或擲出例外，不能說一定是 null。B 在 `MoveNext()` 回傳 `true` 之後讀取，是合法的。
+- `using`：`IEnumerator<T>` 實作 `IDisposable`；`using` 在離開區塊時一定呼叫 `Dispose()`，即使中途發生例外，讓需要清理的列舉器能釋放資源。
+
+### 限制與相關概念
+
+- 本單元只使用現成的列舉器，不要求手寫列舉器類別。官方的 [IEnumerator&lt;T&gt; 範例](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerator-1?view=net-10.0#examples) 示範如何實作，列為選讀。
+- `Reset()` 主要為 COM 互通而存在，實作可以直接擲出 `NotSupportedException`；要重新走訪，請再呼叫一次 `GetEnumerator()` 取得新的列舉器。
+- 列舉期間修改集合會使列舉器失效，留到單元 7 區分。
+- [列舉器與集合](<../../../../docs/topics/collections/C%23筆記 - 列舉器與集合.md>) 使用非泛型 `IEnumerator` 走訪陣列；其中「開頭列舉器會拿到 null」的說法不成立：2026-11-07 以 .NET 10 實測，該筆記以 `Array.CreateInstance` 建立的陣列，其非泛型列舉器在開頭與結束後讀取 `Current` 都擲出 `InvalidOperationException`。正式歸檔時由 Ticket 10 一併修正。
 
 ## 原有回合事實筆記（保留原文）
 

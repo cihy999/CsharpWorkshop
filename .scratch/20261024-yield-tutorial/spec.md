@@ -48,6 +48,8 @@ Category: enhancement
 
 ## Implementation Decisions
 
+- 2026-11-07 最後驗收：依學生要求完成 [Ticket 03](issues/03-enumerator-protocol.md#answer) 的驗收，標為 resolved。第三單元教材在 `course/03-enumerator-protocol/`，程式沿用 `course/01-list-basics/YieldTutorial/`；正式歸檔由 Ticket 10 追蹤，本次尚未開始 Ticket 04。
+
 - 2026-11-07 最後驗收：依學生要求完成 [Ticket 02](issues/02-ienumerable-contract.md#answer) 的驗收，標為 resolved。第二單元教材在 `course/02-ienumerable-contract/`，程式沿用 `course/01-list-basics/YieldTutorial/`；正式歸檔由 Ticket 10 追蹤，本次尚未開始 Ticket 03。
 
 - 2026-10-24 最後驗收：依學生要求完成 [Ticket 01](issues/01-list-basics.md#answer) 的調整後驗收，標為 resolved；以下「進行中／供檢視」敘述保留為歷次決策脈絡。教材仍留在 `course/01-list-basics/`，正式歸檔由 Ticket 10 追蹤；本次尚未開始 Ticket 02。

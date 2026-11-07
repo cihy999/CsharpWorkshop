@@ -11,7 +11,7 @@ document.querySelectorAll('form[data-feedback]').forEach(form => {
                 return;
             }
             const expected = form.dataset.expected.split(' ');
-            const correct = tokens.length === expected.length && tokens.every((value, i) => value === expected[i]);
+            const correct = tokens.length === expected.length && tokens.every((value, i) => value.toLowerCase() === expected[i].toLowerCase());
             output.textContent = (correct ? '預測一致。' : '還有差異。') + ' ' + form.dataset.feedback;
             return;
         }
