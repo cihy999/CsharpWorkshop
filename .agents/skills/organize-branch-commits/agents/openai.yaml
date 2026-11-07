@@ -1,0 +1,7 @@
+interface:
+  display_name: "Organize Branch Commits"
+  short_description: "依職責重新整理指定 Git 分支的 commit 歷史"
+  default_prompt: "Use $organize-branch-commits to reorganize the specified branch into responsibility-focused commits."
+
+policy:
+  allow_implicit_invocation: false
