@@ -43,8 +43,7 @@ type: 簡短標題
 
 - **type**（依主要變更選一個）：
   - `docs`：`docs/topics/` 正式文章的新增、修訂、搬移
-  - `sample`：`samples/` 聚焦概念的範例
-  - `project`：`projects/` 整合範例
+  - `sample`：`samples/` 可執行範例
   - `course`：`.scratch/` 內的課程教材、示範、測驗題與解答，以及 spec、map、issues 等任務追蹤檔
   - `notes`：`.scratch/.../notes/note-*.md` 學生個人筆記（僅在學生明確要求提交時使用）
   - `index`：README 索引、關鍵字入口、連結維護
