@@ -6,7 +6,7 @@ C#／.NET 知識庫，提供概念查詢、技術比較、問題解法與可執�
 
 - 找概念或語法：由下方「主題索引」進入文章，再開啟對應範例。
 - 找文章內的概念：由「關鍵字入口」查找，例如 `record`、`init`、`with`。
-- 找可執行程式：由索引的範例欄開啟專案，或參考「建置與執行」。
+- 找可執行程式：由索引的範例欄開啟專案。
 
 既有筆記目前整篇保留，包含教材摘要、題目與作答；主題歸檔不代表內容已重新審訂。檔名與範例名稱中的章節編號保留作為來源識別，查詢以本索引為入口。
 
@@ -113,47 +113,5 @@ CsharpWorkshop/
 | 明確介面實作、反射與動態載入 DLL | [Interface](<docs/topics/csharp/C%23筆記 - Interface.md>)、[Provider 範例](samples/csharp/P03_Interface/) |
 | int?、?.、??、null! | [nullable](<docs/topics/csharp/C%23筆記 - nullable.md>) |
 | IEnumerable／IEnumerator 與 yield | [列舉器與集合](<docs/topics/collections/C%23筆記 - 列舉器與集合.md>)、[yield](docs/topics/collections/yield筆記.md) |
-
-## 建置與執行
-
-保留各範例原有的 `.sln`／`.slnx`、專案名稱、命名空間與目標框架。可從主題索引進入資料夾，開啟其中的 solution，或在 repo 根目錄使用 .NET CLI。
-
-| 範例群組 | 目標框架／需求 |
-|----------|---------------|
-| 大部分 samples | .NET 8 |
-| `Ch07_Inherit`、`Pattern_Ch10_Strategy` | .NET 10；solution 使用 `.slnx` |
-| `P03_Interface` | .NET 8；WinForms 主程式需要 Windows |
-
-建置與執行委派範例：
-
-```powershell
-dotnet build samples/csharp/P02_Delegate/P02_Delegate.sln
-dotnet run --project samples/csharp/P02_Delegate/P02_Delegate.csproj
-```
-
-建置事件比較範例（包含共用類別庫）：
-
-```powershell
-dotnet build samples/csharp/P03_Events/P03_Events.sln
-dotnet run --project samples/csharp/P03_Events/EventsPractice/EventsPractice.csproj
-```
-
-建置介面 Provider 範例：
-
-```powershell
-dotnet build samples/csharp/P03_Interface/P03_Interface.sln
-```
-
-此 WinForms 範例的 Provider DLL 原有載入方式依賴工作目錄。建置後，從主程式的輸出目錄執行，讓 `..\..\..\libs` 指向專案內的 `libs`：
-
-```powershell
-Push-Location samples/csharp/P03_Interface/DecodeBytes.WinForm/bin/Debug/net8.0-windows
-try {
-    dotnet DecodeBytes.WinForm.dll
-}
-finally {
-    Pop-Location
-}
-```
 
 本文提供分類與查詢入口；範例的程式行為與教學內容維持既有版本。
