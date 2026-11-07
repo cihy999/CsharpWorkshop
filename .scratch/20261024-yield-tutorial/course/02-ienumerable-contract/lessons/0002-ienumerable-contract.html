@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>02 · 為什麼 List 可以交給 IEnumerable？</title><link rel="stylesheet" href="../../01-list-basics/assets/course.css"><script src="../../01-list-basics/assets/quiz.js" defer></script></head>
+<body><main>
+<header><div class="eyebrow">C# WORKSHOP / 02</div><h1>同一份清單，<br>換一個型別來看。</h1><p>這一課只做一件事：讀懂 <code>IEnumerable&lt;int&gt;</code>，並分清楚「是哪個物件」與「能直接用哪些操作」。</p><p class="meta">約 10 分鐘 · .NET 10 · 教材草稿 · 來源查證 2026-11-07</p><nav><a href="#read">開始</a><a href="#predict">預測輸出</a><a href="#change">修改練習</a><a href="../reference/ienumerable-contract.html">速查表</a><a href="../../01-list-basics/lessons/0001-list-basics.html">上一課</a></nav></header>
+<section id="read"><h2>01 / 先讀懂角括號</h2><p>原案例的方法長這樣：</p>
+<pre><code>private static IEnumerable&lt;int&gt; EnumerateRoundFacts(...)</code></pre>
+<p>角括號裡的型別告訴泛型型別「處理哪種資料」。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/generics">官方：泛型</a></p>
+<table><thead><tr><th>寫法</th><th>讀法</th></tr></thead><tbody><tr><td><code>List&lt;int&gt;</code></td><td>元素型別是 int 的清單</td></tr><tr><td><code>IEnumerable&lt;int&gt;</code></td><td>可以逐一取得 int 的序列</td></tr></tbody></table>
+<p><code>IEnumerable&lt;T&gt;</code> 是<strong>介面</strong>：一份能力約定。實作它的類別必須提供約定的成員；使用它的程式只依賴約定，不必知道實際類別。<code>List&lt;T&gt;</code> 的宣告列出它實作 <code>IEnumerable&lt;T&gt;</code>，所以 List 可以交給這種型別的變數。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces">官方：介面</a> · <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1?view=net-10.0">IEnumerable&lt;T&gt;</a></p>
+</section>
+<section><h2>02 / 賦值不是複製</h2>
+<pre><code>List&lt;int&gt; list = new List&lt;int&gt; { 10, 20, 30 };
+IEnumerable&lt;int&gt; sequence = list;</code></pre>
+<p>List 是類別，變數保存的是物件參考。第二行讓 <code>sequence</code> 指向<strong>同一個</strong> List 物件：沒有建立新集合，也不是拍下當下內容的快照。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/reference-types">官方：參考型別</a></p>
+<form data-answer="c" data-feedback="兩個變數參照同一個 List 物件；之後透過 list 修改，透過 sequence 也看得到。"><fieldset><legend>IEnumerable&lt;int&gt; sequence = list; 做了什麼？</legend><label><input type="radio" name="assign" value="a">把清單轉成固定不變的快照</label><label><input type="radio" name="assign" value="b">建立一份內容相同的新清單</label><label><input type="radio" name="assign" value="c">讓另一個變數參照同一清單</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section><h2>03 / 宣告型別決定能寫什麼</h2><p>物件仍然是 List，但編譯器依<strong>變數的宣告型別</strong>檢查成員。<code>IEnumerable&lt;int&gt;</code> 只約定「可以走訪」。先想想：</p>
+<form data-answer="a" data-feedback="IEnumerable&lt;int&gt; 只約定可以走訪；Add 與索引是 List 提供的成員。"><fieldset><legend>sequence 宣告為 IEnumerable&lt;int&gt;，哪一行可以直接編譯？</legend><label><input type="radio" name="member" value="a"><code>foreach (int n in sequence)</code></label><label><input type="radio" name="member" value="b"><code>sequence.Add(50);</code></label><label><input type="radio" name="member" value="c"><code>int x = sequence[0];</code></label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p>同一個物件，透過兩種宣告型別能直接寫的操作：</p>
+<table><thead><tr><th>寫法</th><th>list</th><th>sequence</th></tr></thead><tbody><tr><td><code>foreach</code> 走訪</td><td>可以</td><td>可以</td></tr><tr><td><code>.Add(50)</code></td><td>可以</td><td>不能編譯</td></tr><tr><td><code>[0]</code> 索引</td><td>可以</td><td>不能編譯</td></tr><tr><td><code>.Count</code> 屬性</td><td>可以</td><td>不能編譯</td></tr></tbody></table>
+<p>方法名稱前的型別是<strong>回傳型別</strong>：</p>
+<pre><code>private static IEnumerable&lt;int&gt; GetNumbers(List&lt;int&gt; numbers)
+{
+    return numbers;
+}</code></pre>
+<p>讀作「接收一個 <code>List&lt;int&gt;</code>，回傳可逐一取得 int 的序列」。內部回傳的是 List，呼叫端只看到 <code>IEnumerable&lt;int&gt;</code>。</p>
+<form data-answer="b" data-feedback="呼叫端依回傳型別使用結果，所以只能把它當成可走訪的序列。"><fieldset><legend>呼叫 GetNumbers(list) 拿到的值，宣告型別是什麼？</legend><label><input type="radio" name="returns" value="a"><code>List&lt;int&gt;</code></label><label><input type="radio" name="returns" value="b"><code>IEnumerable&lt;int&gt;</code></label><label><input type="radio" name="returns" value="c"><code>int</code></label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="predict"><h2>04 / 先預測，再執行</h2><p>先讀程式，想好每一行輸出，再按核對。</p>
+<pre><code>List&lt;int&gt; list = new List&lt;int&gt; { 10, 20, 30 };
+IEnumerable&lt;int&gt; sequence = list;
+list.Add(40);
+
+foreach (int number in sequence)
+{
+    Console.WriteLine(number);
+}</code></pre>
+<form data-expected="10 20 30 40" data-feedback="sequence 與 list 是同一個物件；Add(40) 發生在列舉之前，所以列舉時看到四個值。"><label for="prediction">依序輸入全部數字，每行一個（也可用空格或逗號分隔）。</label><textarea id="prediction" spellcheck="false"></textarea><button type="submit">核對預測</button><p role="status" class="feedback"></p></form>
+<noscript><p>互動回饋需要 JavaScript。你也可以在紙上作答，再展開下方解答。</p></noscript>
+<details><summary>預測題解答與原因</summary><pre>10
+20
+30
+40</pre><p>賦值沒有複製資料。列舉 <code>sequence</code> 讀的是這份 List 在列舉時的內容，已包含 40。</p></details>
+<h3>執行真正的 C# 範例</h3><p>在 <code>.scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial</code> 資料夾的終端機執行：</p><pre><code>dotnet run -- 02</code></pre><p>完整示範多了三件事：先以 <code>object.ReferenceEquals</code> 輸出「同一個物件：True」，再分別透過 <code>list</code>、<code>sequence</code> 與 <code>GetNumbers</code> 的回傳值列舉，三段都是 10、20、30、40。<a href="../../01-list-basics/YieldTutorial/README.md">完整輸出與 repo 根目錄執行指令</a></p>
+</section>
+<section id="change"><h2>05 / 自己改一次</h2><p>目標：讓 <code>sequence</code> 列舉時也看到 4。</p><ol><li>建立 <code>List&lt;int&gt; list = new List&lt;int&gt; { 1, 2, 3 };</code>，以 <code>IEnumerable&lt;int&gt; sequence = GetNumbers(list);</code> 取得序列。</li><li>先試寫 <code>sequence.Add(4);</code>，建置並閱讀錯誤訊息。</li><li>改成可以編譯的寫法，再以 <code>foreach</code> 列舉 <code>sequence</code>。</li></ol><p>可以寫在 <code>EnumerableContract.cs</code> 的 <code>Run()</code> 結尾。觀察完錯誤後，刪除無法編譯的那一行。</p>
+<details><summary>修改題參考解</summary><pre><code>List&lt;int&gt; list = new List&lt;int&gt; { 1, 2, 3 };
+IEnumerable&lt;int&gt; sequence = GetNumbers(list);
+
+list.Add(4);
+
+foreach (int number in sequence)
+{
+    Console.WriteLine(number);
+}</code></pre><p><code>sequence.Add(4)</code> 會得到 CS1061：<code>IEnumerable&lt;int&gt;</code> 未包含 <code>Add</code> 的定義。改由 <code>list</code> 新增；它與 <code>sequence</code> 是同一個物件，所以列舉輸出 1、2、3、4。</p><p>專案另附獨立解答：<code>dotnet run -- 02-answer</code>。</p></details>
+<h3>合上教材，用自己的話說</h3><p>為什麼 <code>list.Add(40)</code> 會讓 <code>sequence</code> 也列出 40？又為什麼 <code>sequence.Add(40)</code> 不能編譯？你可以把解釋貼回聊天，我會依你的說法補充。</p><details><summary>解釋題判準</summary><p>能說出三點即可：賦值只讓兩個變數參照同一個 List，沒有複製，也不是快照；編譯器依宣告型別決定能直接使用的成員，<code>IEnumerable&lt;int&gt;</code> 只約定可走訪；<code>List&lt;int&gt;</code> 實作了 <code>IEnumerable&lt;int&gt;</code>，所以能交給該型別。</p></details>
+<p class="callout">稍後或隔天，不看範例讀一次 <code>private static IEnumerable&lt;int&gt; EnumerateRoundFacts(...)</code>：說出回傳型別、元素型別，以及呼叫端能對結果做什麼。忘記時再查速查表。</p>
+</section>
+<footer><p>主要閱讀：<a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces">Microsoft Learn：Interfaces</a>，讀開頭與 Implement an interface 兩段即可。</p><p>邊界：本課的修改都在列舉之前。在 foreach 走訪 List 的途中修改它會擲出例外，留到單元 7 再談。</p><nav><a href="../reference/ienumerable-contract.html">型別讀法與用語速查</a><a href="../../01-list-basics/yield筆記.md#unit-02">完整 Markdown 草稿</a><a href="../../01-list-basics/lessons/0001-list-basics.html">上一課：List 基礎</a></nav><p>任何一行不清楚，都可以回聊天問我。此頁的練習只顯示當下回饋，重新整理即清除。</p></footer>
+</main></body></html>

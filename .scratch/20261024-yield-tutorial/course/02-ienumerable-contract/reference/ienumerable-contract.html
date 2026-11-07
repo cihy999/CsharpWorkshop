@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IEnumerable 約定速查</title><link rel="stylesheet" href="../../01-list-basics/assets/course.css"></head><body><main><header><div class="eyebrow">C# WORKSHOP / REFERENCE</div><h1>IEnumerable 約定速查</h1><p class="meta">.NET 10 · 查證日期 2026-11-07</p><nav><a href="../lessons/0002-ienumerable-contract.html#read">回到課程</a><a href="../../01-list-basics/reference/list-basics.html">List 基礎速查</a></nav></header>
+<h2>三種讀法</h2><pre><code>// 元素型別是 int 的清單
+List&lt;int&gt; list = new List&lt;int&gt; { 10, 20, 30 };
+
+// 同一個物件，只當成可走訪的序列
+IEnumerable&lt;int&gt; sequence = list;
+
+// 回傳型別寫在方法名稱前
+private static IEnumerable&lt;int&gt; GetNumbers(List&lt;int&gt; numbers)
+{
+    return numbers;
+}</code></pre>
+<h2>賦值後的關係</h2><pre><code>list     → List&lt;int&gt; 物件 A：10, 20, 30
+sequence → List&lt;int&gt; 物件 A（同一個）
+
+list.Add(40);   // 之後列舉 sequence 也會看到 40</code></pre>
+<p>賦值沒有複製元素，也不是快照；<code>object.ReferenceEquals(list, sequence)</code> 為 <code>True</code>。</p>
+<h2>宣告型別決定能直接用的操作</h2><table><thead><tr><th>寫法</th><th>List&lt;int&gt;</th><th>IEnumerable&lt;int&gt;</th></tr></thead><tbody><tr><td><code>foreach</code></td><td>可以</td><td>可以</td></tr><tr><td><code>.Add(x)</code></td><td>可以</td><td>CS1061</td></tr><tr><td><code>[i]</code></td><td>可以</td><td>CS0021</td></tr><tr><td><code>.Count</code></td><td>可以</td><td>CS0428</td></tr><tr><td>賦值給 <code>List&lt;int&gt;</code></td><td>—</td><td>CS0266</td></tr></tbody></table>
+<p>錯誤代碼以 .NET 10 SDK 實測（2026-11-07，啟用 ImplicitUsings）。<code>.Count()</code> 有括號時是 LINQ 擴充方法，可以編譯，不屬於本課範圍。</p>
+<h2 id="glossary">用語</h2><table><thead><tr><th>名稱</th><th>本課含義</th></tr></thead><tbody><tr><td>型別參數 T</td><td>泛型型別中的佔位型別，使用時填入實際型別，例如 int。</td></tr><tr><td>介面</td><td>一份能力約定；實作的類別必須提供約定的成員。不能直接 new。</td></tr><tr><td>IEnumerable&lt;T&gt;</td><td>可以逐一取得 T 的序列；約定只保證能走訪。</td></tr><tr><td>宣告型別</td><td>變數或回傳值寫出的型別；編譯器據此決定可直接使用的成員。</td></tr><tr><td>參考</td><td>類別物件的變數保存參考；多個變數可指向同一物件。</td></tr></tbody></table>
+<h2>邊界</h2><p>在 <code>foreach</code> 走訪 List 的途中修改同一份 List，下一次取值會擲出 <code>InvalidOperationException</code>（單元 7 再談）。本課的修改都在列舉之前。</p>
+<footer><p>官方來源：<a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/generics">泛型</a> · <a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces">介面</a> · <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.ienumerable-1?view=net-10.0">IEnumerable&lt;T&gt;</a> · <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1?view=net-10.0">List&lt;T&gt;</a> · <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/reference-types">參考型別</a> · <a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.getenumerator?view=net-10.0#remarks">List.GetEnumerator 備註</a></p><p><a href="../lessons/0002-ienumerable-contract.html#change">回到修改練習</a>。有疑問時，隨時回聊天問講師。</p></footer></main></body></html>

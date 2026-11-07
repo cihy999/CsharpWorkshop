@@ -15,8 +15,14 @@ namespace YieldTutorial
                 case "01-answer":
                     ListBasics.RunExerciseAnswer();
                     break;
+                case "02":
+                    EnumerableContract.Run();
+                    break;
+                case "02-answer":
+                    EnumerableContract.RunExerciseAnswer();
+                    break;
                 default:
-                    Console.Error.WriteLine("可用選項：01、01-answer");
+                    Console.Error.WriteLine("可用選項：01、01-answer、02、02-answer");
                     Environment.ExitCode = 1;
                     break;
             }

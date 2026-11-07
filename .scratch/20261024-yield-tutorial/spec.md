@@ -48,6 +48,8 @@ Category: enhancement
 
 ## Implementation Decisions
 
+- 2026-11-07 最後驗收：依學生要求完成 [Ticket 02](issues/02-ienumerable-contract.md#answer) 的驗收，標為 resolved。第二單元教材在 `course/02-ienumerable-contract/`，程式沿用 `course/01-list-basics/YieldTutorial/`；正式歸檔由 Ticket 10 追蹤，本次尚未開始 Ticket 03。
+
 - 2026-10-24 最後驗收：依學生要求完成 [Ticket 01](issues/01-list-basics.md#answer) 的調整後驗收，標為 resolved；以下「進行中／供檢視」敘述保留為歷次決策脈絡。教材仍留在 `course/01-list-basics/`，正式歸檔由 Ticket 10 追蹤；本次尚未開始 Ticket 02。
 
 - 2026-10-24 補充歸檔範圍：第一單元課堂延伸的「走訪」、for／foreach 選擇與 List<int> 記憶體配置（含 Count／Capacity、擴充複製、舊陣列回收與預留容量）也需整理為正式知識內容，由 [Ticket 10](issues/10-publish-course.md) 追蹤；原始課堂筆記保留原文，正式文章不以個人作答或學習進度呈現。
