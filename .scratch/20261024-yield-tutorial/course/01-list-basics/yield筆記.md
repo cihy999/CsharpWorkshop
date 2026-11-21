@@ -1,8 +1,8 @@
 # 從 List 到 yield
 
-開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)。本文件保留完整草稿與原始素材。
+開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)，第四單元見 [單元 4](#unit-04)。本文件保留完整草稿與原始素材。
 
-本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至三單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
+本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收；Ticket 04 教材已備妥，尚未進行最後驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至四單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
 
 範例專案：[YieldTutorial](YieldTutorial/)。
 
@@ -590,6 +590,309 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 - `Reset()` 主要為 COM 互通而存在，實作可以直接擲出 `NotSupportedException`；要重新走訪，請再呼叫一次 `GetEnumerator()` 取得新的列舉器。
 - 列舉期間修改集合會使列舉器失效，留到單元 7 區分。
 - [列舉器與集合](<../../../../docs/topics/collections/C%23筆記 - 列舉器與集合.md>) 使用非泛型 `IEnumerator` 走訪陣列；其中「開頭列舉器會拿到 null」的說法不成立：2026-11-07 以 .NET 10 實測，該筆記以 `Array.CreateInstance` 建立的陣列，其非泛型列舉器在開頭與結束後讀取 `Current` 都擲出 `InvalidOperationException`。正式歸檔時由 Ticket 10 一併修正。
+
+[下一單元](#unit-04)改由 yield 方法交出列舉器，觀察 `MoveNext()` 每次讓方法執行到哪裡。
+
+<a id="unit-04"></a>
+
+## 單元 4：yield 如何分次提供元素？
+
+開始上課請開啟 [第四單元 HTML 短課程](../04-yield-suspension/lessons/0004-yield-suspension.html)；複習可看 [yield 暫停與繼續速查](../04-yield-suspension/reference/yield-suspension.html)。
+
+適用版本：本單元以 .NET 10 驗證（SDK 11.0.100 建置 `net10.0`，於 .NET Runtime 10.0.15 執行）。驗證日期：2026-11-21。
+
+### 簡短說明
+
+原案例的 `EnumerateRoundFacts` 宣告回傳 `IEnumerable<int>`，方法裡卻沒有建立 List，而是寫了好幾個 `yield return`。本單元比較兩種「讓方法交出多個值」的寫法：
+
+| | 一般 `return` | `yield return` |
+|---|---|---|
+| 交出什麼 | 整份結果，例如已放好三個值的 List，一次交出 | 序列的下一個元素，一次一個 |
+| 交出之後 | 方法執行結束，控制回到呼叫端 | 方法暫停；下次要求元素時，從這一行之後繼續 |
+| 區域變數 | 方法結束後不再使用 | 暫停期間保留，繼續時沿用原本的值 |
+| 方法何時結束 | 執行到 `return` | 執行到方法結尾（或 `yield break`，單元 6） |
+
+[官方：return 陳述式](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/jump-statements#the-return-statement)、[官方：yield 陳述式](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield)。
+
+**迭代器方法。** 主體中有 `yield return` 的方法稱為迭代器（iterator）。它的回傳型別必須是 `IEnumerable<T>`、`IEnumerator<T>` 或對應的非泛型介面；本課程使用 `IEnumerable<int>`。`yield return` 後面一定要接一個運算式，該值就是這次交出的元素。[官方：迭代器](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/iterators)、[官方：迭代器方法的結構規則](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/iterator-yield#structure-of-an-iterator-method)。
+
+**兩種寫法不能混在同一個方法。** C# 規格規定，迭代器區塊中出現 `return` 陳述式是編譯錯誤；要交出值就用 `yield return`。[C# 規格：區塊（iterator block）](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#133-blocks)。2026-11-21 以 .NET 10 在暫存專案實測：
+
+| 寫法 | 結果 |
+|---|---|
+| 同一個方法裡有 `yield return 10;` 與 `return new List<int> { 20 };` | CS1622：無法從迭代器傳回值 |
+| 回傳型別寫成 `List<int>`，主體使用 `yield return` | CS1624：`List<int>` 不是 Iterator 介面類型 |
+
+這些寫法不放入共用專案，以免專案無法建置。本單元把兩種寫法放在兩個各自合法的方法中對照。
+
+**對上單元 3 的列舉器。** 使用序列的一方稱為**消費端**（例如 `foreach`），迭代器方法稱為**產生端**。消費端每呼叫一次 `MoveNext()`，產生端就往下執行一段：
+
+| 產生端執行到 | `MoveNext()` 回傳 | `Current` |
+|---|---|---|
+| 一個 `yield return 運算式;` | `true` | 這個運算式的值 |
+| 方法結尾 | `false` | 未定義，不讀 |
+
+第一次 `MoveNext()` 從方法開頭執行；之後每一次都從上次暫停的那個 `yield return` 的**下一行**繼續，直到遇到下一個 `yield return` 或方法結尾。暫停時，所有區域變數的值與暫停位置都會保存；繼續時還原這些值。兩次要求之間，產生端不會自己往下跑。[C# 規格：MoveNext 的行為](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151552-advance-the-enumerator)、[官方：迭代器的執行](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#execution-of-an-iterator)。
+
+本單元一律在同一行呼叫迭代器方法並取得列舉器，只觀察「每次要求元素」時產生端執行到哪裡。呼叫方法、`GetEnumerator()` 與第一次 `MoveNext()` 各自的時間點，留到單元 5。
+
+### 範例
+
+以下是 [YieldSuspension.cs](YieldTutorial/YieldSuspension.cs) 中的三個產生端方法。輸出中以 `[產生端]` 開頭的行由這些方法印出：
+
+```csharp
+private static IEnumerable<int> GetNumbersWithReturn()
+{
+    List<int> numbers = new List<int>();
+    numbers.Add(10);
+    numbers.Add(20);
+    numbers.Add(30);
+    Console.WriteLine("[產生端] 三個值都放進 List，用 return 一次交出");
+    return numbers;
+}
+
+private static IEnumerable<int> GetNumbersWithYield()
+{
+    Console.WriteLine("[產生端] yield return 10");
+    yield return 10;
+    Console.WriteLine("[產生端] yield return 20");
+    yield return 20;
+    Console.WriteLine("[產生端] yield return 30");
+    yield return 30;
+    Console.WriteLine("[產生端] 走到方法結尾");
+}
+
+private static IEnumerable<int> CountUp()
+{
+    int count = 0;
+    Console.WriteLine("[產生端] 從方法開頭執行，count = " + count);
+
+    count += 10;
+    Console.WriteLine("[產生端] 位置 1：產出 count = " + count);
+    yield return count; // 位置 1
+
+    Console.WriteLine("[產生端] 從位置 1 之後繼續，count = " + count);
+    count += 10;
+    Console.WriteLine("[產生端] 位置 2：產出 count = " + count);
+    yield return count; // 位置 2
+
+    Console.WriteLine("[產生端] 從位置 2 之後繼續，count = " + count);
+    count += 10;
+    Console.WriteLine("[產生端] 位置 3：產出 count = " + count);
+    yield return count; // 位置 3
+
+    Console.WriteLine("[產生端] 從位置 3 之後繼續，走到方法結尾");
+}
+```
+
+兩個前段方法都回傳 `IEnumerable<int>`，交出的值也都是 10、20、30；差別只在方法內部用 `return` 還是 `yield return`。`CountUp` 用區域變數 `count` 計數，註解標出三個 `yield return` 的位置。
+
+消費端是 `Run()` 的內容。前兩段用 `foreach`，第三段沿用單元 3 的逐次呼叫寫法：
+
+```csharp
+Console.WriteLine("return 寫法：");
+foreach (int number in GetNumbersWithReturn())
+{
+    Console.WriteLine("[消費端] 取得 " + number);
+}
+
+Console.WriteLine("yield return 寫法：");
+foreach (int number in GetNumbersWithYield())
+{
+    Console.WriteLine("[消費端] 取得 " + number);
+}
+
+Console.WriteLine("逐次要求 CountUp 的元素：");
+using (IEnumerator<int> enumerator = CountUp().GetEnumerator())
+{
+    Console.WriteLine("[消費端] 要求第 1 個");
+    bool moved = enumerator.MoveNext();
+    Console.WriteLine("[消費端] MoveNext = " + moved + "，Current = " + enumerator.Current);
+    Console.WriteLine("[消費端] 先處理別的事，還沒要求下一個");
+
+    Console.WriteLine("[消費端] 要求第 2 個");
+    moved = enumerator.MoveNext();
+    Console.WriteLine("[消費端] MoveNext = " + moved + "，Current = " + enumerator.Current);
+
+    Console.WriteLine("[消費端] 要求第 3 個");
+    moved = enumerator.MoveNext();
+    Console.WriteLine("[消費端] MoveNext = " + moved + "，Current = " + enumerator.Current);
+
+    Console.WriteLine("[消費端] 要求第 4 個");
+    moved = enumerator.MoveNext();
+    Console.WriteLine("[消費端] MoveNext = " + moved + "，序列結束，不讀 Current");
+}
+```
+
+### 預測輸出
+
+先不執行程式，寫下你的預測：
+
+1. 「return 寫法」與「yield return 寫法」中，`[產生端]` 與 `[消費端]` 的行各自如何排列？兩者取得的值與順序相同嗎？
+2. 「逐次要求」的第 2 次要求時，產生端印出的第一行是什麼？`count` 是多少？
+3. 「先處理別的事」那行之後、「要求第 2 個」之前，產生端會印出任何東西嗎？
+4. 第 4 次要求時 `MoveNext()` 回傳什麼？產生端最後印出哪一行？
+
+### 執行觀察
+
+從 repo 根目錄執行：
+
+```powershell
+dotnet build .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial/YieldTutorial.csproj
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 04
+```
+
+觀察三件事：return 版的產生端訊息在所有值之前只出現一次，yield 版則與消費端交錯；兩次要求之間產生端沒有輸出；每次繼續時印出的 `count` 都是上次產出時的值。
+
+### 修改練習
+
+1. 在 `YieldSuspension.cs` 新增方法 `CountUpExercise()`，內容先複製 `CountUp`。
+2. 把 `count` 的起始值改為 1，三處 `count += 10` 都改為 `count *= 2`。
+3. 在「從位置 1 之後繼續」那行之後、下一次計算之前，插入一行標記與一個新的產出 `yield return count + 100;`。
+4. 另寫消費端，用 `foreach` 取完所有值，每次輸出「取得 n」，最後輸出共取得幾個值。
+
+先預測：共會取得幾個值、依序是什麼？新產出之後繼續時，`count` 是 2 還是 102？要執行時，可暫時在 `Program.cs` 加一個選項（例如 `04-exercise`），練習後再還原。
+
+解釋題：
+
+1. 「逐次要求」的第 2 次要求時，產生端印出 `count = 10`。為什麼不是 0，也不是 20？
+2. 下面的方法為什麼不能編譯？若要讓它依序產出 10、20，該怎麼改？
+
+```csharp
+private static IEnumerable<int> Broken()
+{
+    yield return 10;
+    return new List<int> { 20 };
+}
+```
+
+### 解答與判準
+
+#### 預測題解答
+
+`04` 實測輸出如下：
+
+```text
+return 寫法：
+[產生端] 三個值都放進 List，用 return 一次交出
+[消費端] 取得 10
+[消費端] 取得 20
+[消費端] 取得 30
+yield return 寫法：
+[產生端] yield return 10
+[消費端] 取得 10
+[產生端] yield return 20
+[消費端] 取得 20
+[產生端] yield return 30
+[消費端] 取得 30
+[產生端] 走到方法結尾
+逐次要求 CountUp 的元素：
+[消費端] 要求第 1 個
+[產生端] 從方法開頭執行，count = 0
+[產生端] 位置 1：產出 count = 10
+[消費端] MoveNext = True，Current = 10
+[消費端] 先處理別的事，還沒要求下一個
+[消費端] 要求第 2 個
+[產生端] 從位置 1 之後繼續，count = 10
+[產生端] 位置 2：產出 count = 20
+[消費端] MoveNext = True，Current = 20
+[消費端] 要求第 3 個
+[產生端] 從位置 2 之後繼續，count = 20
+[產生端] 位置 3：產出 count = 30
+[消費端] MoveNext = True，Current = 30
+[消費端] 要求第 4 個
+[產生端] 從位置 3 之後繼續，走到方法結尾
+[消費端] MoveNext = False，序列結束，不讀 Current
+```
+
+兩種寫法取得的值與順序相同。return 版在 `return` 前已把三個值放進 List，方法隨即結束，之後 `foreach` 只是走訪這份 List。yield 版每交出一個值就暫停，消費端處理完、要求下一個時，才從暫停處繼續，因此兩端的輸出交錯；最後一次要求讓方法走到結尾，`foreach` 才結束。
+
+逐次要求時，每次 `MoveNext()` 讓產生端從上次暫停處的下一行執行到下一個 `yield return`；「先處理別的事」之後沒有產生端輸出，因為還沒有人要求下一個。第 4 次要求時，產生端從位置 3 之後執行到方法結尾，`MoveNext()` 回傳 `False`。
+
+#### 修改題參考解
+
+以下是同專案 `CountUpModified()` 與 `RunExerciseAnswer()` 的內容，可直接以 `04-answer` 選項執行：
+
+```csharp
+private static IEnumerable<int> CountUpModified()
+{
+    int count = 1;
+    Console.WriteLine("[產生端] 從方法開頭執行，count = " + count);
+
+    count *= 2;
+    Console.WriteLine("[產生端] 位置 1：產出 count = " + count);
+    yield return count; // 位置 1
+
+    Console.WriteLine("[產生端] 從位置 1 之後繼續，count = " + count);
+    Console.WriteLine("[產生端] 新增的位置：產出 count + 100 = " + (count + 100));
+    yield return count + 100; // 新增的位置
+
+    Console.WriteLine("[產生端] 從新增的位置之後繼續，count = " + count);
+    count *= 2;
+    Console.WriteLine("[產生端] 位置 2：產出 count = " + count);
+    yield return count; // 位置 2
+
+    Console.WriteLine("[產生端] 從位置 2 之後繼續，count = " + count);
+    count *= 2;
+    Console.WriteLine("[產生端] 位置 3：產出 count = " + count);
+    yield return count; // 位置 3
+
+    Console.WriteLine("[產生端] 從位置 3 之後繼續，走到方法結尾");
+}
+```
+
+```csharp
+int received = 0;
+
+foreach (int number in CountUpModified())
+{
+    received++;
+    Console.WriteLine("[消費端] 取得 " + number);
+}
+
+Console.WriteLine("[消費端] 共取得 " + received + " 個值");
+```
+
+```powershell
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 04-answer
+```
+
+實測輸出：
+
+```text
+[產生端] 從方法開頭執行，count = 1
+[產生端] 位置 1：產出 count = 2
+[消費端] 取得 2
+[產生端] 從位置 1 之後繼續，count = 2
+[產生端] 新增的位置：產出 count + 100 = 102
+[消費端] 取得 102
+[產生端] 從新增的位置之後繼續，count = 2
+[產生端] 位置 2：產出 count = 4
+[消費端] 取得 4
+[產生端] 從位置 2 之後繼續，count = 4
+[產生端] 位置 3：產出 count = 8
+[消費端] 取得 8
+[產生端] 從位置 3 之後繼續，走到方法結尾
+[消費端] 共取得 4 個值
+```
+
+插入一個 `yield return` 就多一個元素，共四個值：2、102、4、8。`yield return count + 100` 只把運算式的結果交給消費端，沒有改寫 `count`，所以繼續時 `count` 仍是 2，下一次 `count *= 2` 得到 4。
+
+#### 解釋題判準
+
+能清楚表達以下三點即可，不要求背誦原句：
+
+- `count = 10`：第 1 次 `MoveNext()` 執行到位置 1 時暫停，保存了 `count` 的值 10 與暫停位置。第 2 次從位置 1 的下一行繼續，不會回到開頭重新執行 `int count = 0`；印出那行在 `count += 10` 之前，所以是 10，之後才變成 20。
+- `Broken` 不能編譯：方法中有 `yield return` 就是迭代器，迭代器中不能用 `return` 回傳值（CS1622）。改為 `yield return 20;`；若想一次回傳整份 List，則整個方法改用 List 與 `return`，不使用 `yield return`。
+- 對照：一般 `return` 交出整份結果後方法就結束；`yield return` 每次交出一個元素後暫停，等下一次要求才繼續。
+
+### 限制與相關概念
+
+- 保存的是變數本身的值。若區域變數參照 List 等物件，物件內容在暫停期間仍可能被其他程式修改；C# 規格在 MoveNext 的說明中特別註記這點。重複列舉與可變輸入留到單元 7。
+- 本單元不區分呼叫方法、取得列舉器與第一次 `MoveNext()` 的時間點，也不討論只取部分元素時方法執行到哪裡，這些留到單元 5。`yield break`、`foreach` 中途 `break` 與 `finally` 清理留到單元 6。
+- 迭代器有使用限制：參數不能是 `ref`、`out` 或 `in`，不能寫在 lambda 中，`yield return` 不能放在 `catch`、`finally` 或帶有 `catch` 的 `try` 中。[官方：yield 的使用限制](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield)。
+- C# 規格只描述列舉器物件的外部行為，並說明它「通常」由編譯器產生的類別實作，未規定作法。本單元只觀察公開行為（`MoveNext()` 的回傳值、`Current` 與輸出），不依賴產生的型別名稱、欄位或反編譯結果。編譯器狀態機為選讀，不在主線範圍。[C# 規格：列舉器物件](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#15155-enumerator-objects)。
+- 回到原案例：`EnumerateRoundFacts` 在勝利且滿血時，會依序經過兩個 `yield return`，所以 `foreach` 先取得 `RoundFactSelfWin`，再取得 `RoundFactSelfPerfect`；之後從暫停處往下檢查其他條件。完整案例在單元 9 整理。
 
 ## 原有回合事實筆記（保留原文）
 

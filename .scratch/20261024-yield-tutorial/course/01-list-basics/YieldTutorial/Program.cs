@@ -27,8 +27,14 @@ namespace YieldTutorial
                 case "03-answer":
                     EnumeratorProtocol.RunExerciseAnswer();
                     break;
+                case "04":
+                    YieldSuspension.Run();
+                    break;
+                case "04-answer":
+                    YieldSuspension.RunExerciseAnswer();
+                    break;
                 default:
-                    Console.Error.WriteLine("可用選項：01、01-answer、02、02-answer、03、03-answer");
+                    Console.Error.WriteLine("可用選項：01、01-answer、02、02-answer、03、03-answer、04、04-answer");
                     Environment.ExitCode = 1;
                     break;
             }

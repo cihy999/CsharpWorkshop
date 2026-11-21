@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>04 · yield 如何分次提供元素？</title><link rel="stylesheet" href="../../01-list-basics/assets/course.css"><script src="../../01-list-basics/assets/quiz.js" defer></script></head>
+<body><main>
+<header><div class="eyebrow">C# WORKSHOP / 04</div><h1>交出一個，就停在這裡；<br>下次從下一行繼續。</h1><p>這一課只做一件事：看懂 <code>yield return</code> 每次交出一個元素後停在哪裡、下次從哪裡繼續，以及區域變數為什麼還記得原本的值。</p><p class="meta">約 12 分鐘 · .NET 10 · 教材草稿 · 來源查證 2026-11-21</p><nav><a href="#compare">開始</a><a href="#predict">預測輸出</a><a href="#change">修改練習</a><a href="../reference/yield-suspension.html">速查表</a><a href="../../03-enumerator-protocol/lessons/0003-enumerator-protocol.html">上一課</a></nav></header>
+<section id="compare"><h2>01 / return 交出整份，yield return 交出一個</h2><p>兩個方法都回傳 <code>IEnumerable&lt;int&gt;</code>，交出的值也都是 10、20、30：</p>
+<pre><code>static IEnumerable&lt;int&gt; WithReturn()
+{
+    List&lt;int&gt; numbers = new List&lt;int&gt; { 10, 20, 30 };
+    return numbers;          // 交出整份 List，方法結束
+}
+
+static IEnumerable&lt;int&gt; WithYield()
+{
+    yield return 10;         // 交出 10，停在這裡
+    yield return 20;         // 下次從這行開始
+    yield return 30;
+}                            // 走到結尾，序列結束</code></pre>
+<table><thead><tr><th></th><th>一般 <code>return</code></th><th><code>yield return</code></th></tr></thead><tbody><tr><td>交出什麼</td><td>整份結果，一次交出</td><td>下一個元素，一次一個</td></tr><tr><td>交出之後</td><td>方法結束</td><td>方法暫停，等下次要求</td></tr><tr><td>區域變數</td><td>不再使用</td><td>暫停期間保留</td></tr></tbody></table>
+<p>主體中有 <code>yield return</code> 的方法稱為<strong>迭代器</strong>，回傳型別要寫 <code>IEnumerable&lt;T&gt;</code> 或 <code>IEnumerator&lt;T&gt;</code>。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield">官方：yield</a> · <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/jump-statements#the-return-statement">官方：return</a></p>
+<form data-answer="c" data-feedback="yield return 把值交給消費端後，方法暫停；下一次要求元素時才從這行之後繼續。"><fieldset><legend>yield return 交出一個值之後，方法接著會？</legend><label><input type="radio" name="after" value="a">結束，回到呼叫端</label><label><input type="radio" name="after" value="b">繼續跑完整個方法</label><label><input type="radio" name="after" value="c">暫停，等下次要求</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p class="callout">兩種寫法<strong>不能混在同一個方法</strong>。C# 規格規定迭代器裡不能出現 <code>return</code> 陳述式。2026-11-21 以 .NET 10 實測：同一方法裡有 <code>yield return 10;</code> 又寫 <code>return new List&lt;int&gt; { 20 };</code>，得到 CS1622「無法從迭代器傳回值」；回傳型別寫成 <code>List&lt;int&gt;</code> 卻用 <code>yield return</code>，得到 CS1624。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/iterator-yield#structure-of-an-iterator-method">官方：迭代器的結構規則</a></p>
+<form data-answer="a" data-feedback="方法有 yield return 就是迭代器，裡面不能再用 return 回傳值（CS1622）；要交出 20 就寫 yield return 20。"><fieldset><legend>方法裡已有 yield return 10;，還能寫 return list; 嗎？</legend><label><input type="radio" name="mix" value="a">不行，編譯會失敗</label><label><input type="radio" name="mix" value="b">可以，兩者都交出</label><label><input type="radio" name="mix" value="c">可以，只交出 list</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="resume"><h2>02 / 每次 MoveNext，跑到下一個 yield return</h2><p>使用序列的一方叫<strong>消費端</strong>（例如 <code>foreach</code>），迭代器方法叫<strong>產生端</strong>。上一課的 <code>MoveNext()</code> 在這裡有了具體意義：</p>
+<table><thead><tr><th>產生端執行到</th><th><code>MoveNext()</code> 回傳</th><th><code>Current</code></th></tr></thead><tbody><tr><td><code>yield return 運算式;</code></td><td>True</td><td>這個運算式的值</td></tr><tr><td>方法結尾</td><td>False</td><td>未定義，不讀</td></tr></tbody></table>
+<p>第一次 <code>MoveNext()</code> 從方法開頭執行；之後每一次都從<strong>上次暫停的 yield return 的下一行</strong>繼續，直到下一個 <code>yield return</code> 或方法結尾。兩次要求之間，產生端不會自己往下跑。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#execution-of-an-iterator">官方：迭代器的執行</a></p>
+<form data-answer="b" data-feedback="第一次從開頭執行；之後每次都從上次暫停的 yield return 的下一行繼續。"><fieldset><legend>第二次 MoveNext() 時，產生端從哪裡開始執行？</legend><label><input type="radio" name="where" value="a">從方法的第一行</label><label><input type="radio" name="where" value="b">從上次暫停之後</label><label><input type="radio" name="where" value="c">從方法的最後面</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p class="callout">呼叫方法、<code>GetEnumerator()</code> 與第一次 <code>MoveNext()</code> 各自發生在什麼時候，留到單元 5。這一課只看「每次要求元素」時發生什麼。</p>
+</section>
+<section id="locals"><h2>03 / 區域變數會記得</h2><p>暫停時，所有區域變數的值和暫停位置都會保存；繼續時還原。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151552-advance-the-enumerator">C# 規格：MoveNext 的行為</a> 以下是完整範例中的 <code>CountUp</code>：</p>
+<pre><code>private static IEnumerable&lt;int&gt; CountUp()
+{
+    int count = 0;
+    Console.WriteLine("[產生端] 從方法開頭執行，count = " + count);
+
+    count += 10;
+    Console.WriteLine("[產生端] 位置 1：產出 count = " + count);
+    yield return count; // 位置 1
+
+    Console.WriteLine("[產生端] 從位置 1 之後繼續，count = " + count);
+    count += 10;
+    Console.WriteLine("[產生端] 位置 2：產出 count = " + count);
+    yield return count; // 位置 2
+
+    Console.WriteLine("[產生端] 從位置 2 之後繼續，count = " + count);
+    count += 10;
+    Console.WriteLine("[產生端] 位置 3：產出 count = " + count);
+    yield return count; // 位置 3
+
+    Console.WriteLine("[產生端] 從位置 3 之後繼續，走到方法結尾");
+}</code></pre>
+<form data-answer="c" data-feedback="第 1 次停在位置 1 時 count 是 10；第 2 次從下一行繼續，印出時還沒執行 count += 10，所以是 10。"><fieldset><legend>第 2 次 MoveNext() 時，「從位置 1 之後繼續」印出的 count 是？</legend><label><input type="radio" name="count" value="a">20</label><label><input type="radio" name="count" value="b">0</label><label><input type="radio" name="count" value="c">10</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p>保存的是變數本身的值。若變數參照 List 這類物件，物件內容在暫停期間仍可能被別的程式改掉；這留到單元 7。</p>
+</section>
+<section id="predict"><h2>04 / 先預測，再執行</h2><p>這次加上迴圈。先讀程式，想好每一行輸出，再按核對。</p>
+<pre><code>static IEnumerable&lt;int&gt; Numbers()
+{
+    int total = 0;
+    Console.WriteLine("A");
+    for (int i = 1; i &lt;= 3; i++)
+    {
+        total += i;
+        yield return total;
+        Console.WriteLine("B" + i);
+    }
+    Console.WriteLine("C");
+}
+
+foreach (int n in Numbers())
+{
+    Console.WriteLine(n);
+}</code></pre>
+<form data-expected="A 1 B1 3 B2 6 B3 C" data-feedback="每次 yield return 交出 total 後暫停；foreach 印出數字、要求下一個時，才從 yield return 之後印出 B 與迴圈變數 i。"><label for="prediction">依序輸入每一行輸出（每行一個，或用空格、逗號分隔；大小寫不拘）。</label><textarea id="prediction" spellcheck="false"></textarea><button type="submit">核對預測</button><p role="status" class="feedback"></p></form>
+<form data-answer="a" data-feedback="暫停時區域變數都會保存，迴圈變數也一樣；所以 i 從 1 接著變 2，total 從 1 累加到 3。"><fieldset><legend>兩次要求之間，迴圈的 i 與 total 會？</legend><label><input type="radio" name="loop" value="a">保留原本的值</label><label><input type="radio" name="loop" value="b">重設為初始值</label><label><input type="radio" name="loop" value="c">變成未定義值</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<noscript><p>互動回饋需要 JavaScript。你也可以在紙上作答，再展開下方解答。</p></noscript>
+<details><summary>預測題解答與原因</summary><pre>A
+1
+B1
+3
+B2
+6
+B3
+C</pre><p>第一次要求時，方法從開頭印出 A，進入迴圈後交出 total = 1 並暫停，foreach 印出 1。下一次要求從 <code>yield return</code> 的下一行繼續，印出 B1；迴圈的 <code>i</code> 與 <code>total</code> 都保留，所以接著交出 1 + 2 = 3。第四次要求時印出 B3、離開迴圈印出 C，方法走到結尾，foreach 結束。這段程式於 2026-11-21 以 .NET 10 在暫存專案實測。</p></details>
+<h3>執行真正的 C# 範例</h3><p>在 <code>.scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial</code> 資料夾的終端機執行：</p><pre><code>dotnet run -- 04</code></pre><p>完整示範沒有上面的迴圈，分成三段：先以 <code>foreach</code> 對照 return 版與 yield 版，看 <code>[產生端]</code>、<code>[消費端]</code> 兩種輸出如何排列；再用上一課的逐次 <code>MoveNext()</code> 要求 <code>CountUp</code> 的元素，每次要求前後都有標記，並在兩次要求之間插入一行消費端輸出。<a href="../../01-list-basics/YieldTutorial/README.md">完整輸出與 repo 根目錄執行指令</a></p>
+</section>
+<section id="change"><h2>05 / 自己改一次</h2><p>目標：修改計算、插入一個產出，再預測輸出。</p><ol><li>在 <code>YieldSuspension.cs</code> 新增 <code>CountUpExercise()</code>，先複製 <code>CountUp</code>。</li><li>把 <code>count</code> 起始值改為 1，三處 <code>count += 10</code> 改成 <code>count *= 2</code>。</li><li>在「從位置 1 之後繼續」那行之後、下一次計算之前，插入一行標記與 <code>yield return count + 100;</code>。</li><li>用 <code>foreach</code> 取完所有值，每次輸出「取得 n」，最後輸出共取得幾個值。</li></ol><p>先預測：共取得幾個值、依序是什麼？新的產出之後繼續時，<code>count</code> 是 2 還是 102？要執行時，可暫時在 <code>Program.cs</code> 加一個選項（例如 <code>04-exercise</code>），練習後再還原。</p>
+<details><summary>修改題參考解</summary><pre><code>private static IEnumerable&lt;int&gt; CountUpModified()
+{
+    int count = 1;
+    Console.WriteLine("[產生端] 從方法開頭執行，count = " + count);
+
+    count *= 2;
+    Console.WriteLine("[產生端] 位置 1：產出 count = " + count);
+    yield return count; // 位置 1
+
+    Console.WriteLine("[產生端] 從位置 1 之後繼續，count = " + count);
+    Console.WriteLine("[產生端] 新增的位置：產出 count + 100 = " + (count + 100));
+    yield return count + 100; // 新增的位置
+
+    Console.WriteLine("[產生端] 從新增的位置之後繼續，count = " + count);
+    count *= 2;
+    Console.WriteLine("[產生端] 位置 2：產出 count = " + count);
+    yield return count; // 位置 2
+
+    Console.WriteLine("[產生端] 從位置 2 之後繼續，count = " + count);
+    count *= 2;
+    Console.WriteLine("[產生端] 位置 3：產出 count = " + count);
+    yield return count; // 位置 3
+
+    Console.WriteLine("[產生端] 從位置 3 之後繼續，走到方法結尾");
+}
+
+int received = 0;
+
+foreach (int number in CountUpModified())
+{
+    received++;
+    Console.WriteLine("[消費端] 取得 " + number);
+}
+
+Console.WriteLine("[消費端] 共取得 " + received + " 個值");</code></pre><p>實測輸出：</p><pre>[產生端] 從方法開頭執行，count = 1
+[產生端] 位置 1：產出 count = 2
+[消費端] 取得 2
+[產生端] 從位置 1 之後繼續，count = 2
+[產生端] 新增的位置：產出 count + 100 = 102
+[消費端] 取得 102
+[產生端] 從新增的位置之後繼續，count = 2
+[產生端] 位置 2：產出 count = 4
+[消費端] 取得 4
+[產生端] 從位置 2 之後繼續，count = 4
+[產生端] 位置 3：產出 count = 8
+[消費端] 取得 8
+[產生端] 從位置 3 之後繼續，走到方法結尾
+[消費端] 共取得 4 個值</pre><p>多一個 <code>yield return</code> 就多一個元素：2、102、4、8。<code>yield return count + 100</code> 只交出運算結果，沒有改寫 <code>count</code>，所以繼續時仍是 2。專案另附獨立解答：<code>dotnet run -- 04-answer</code>。</p></details>
+<h3>合上教材，用自己的話說</h3><p>回答兩題。你可以把解釋貼回聊天，我會依你的說法補充。</p><ol><li>完整範例逐次要求 <code>CountUp</code> 時，第 2 次要求印出 <code>count = 10</code>。為什麼不是 0，也不是 20？</li><li>下面的方法為什麼不能編譯？若要讓它依序產出 10、20，該怎麼改？</li></ol>
+<pre><code>static IEnumerable&lt;int&gt; Broken()
+{
+    yield return 10;
+    return new List&lt;int&gt; { 20 };
+}</code></pre>
+<details><summary>解釋題判準</summary><p>能說出三點即可：第 1 次 <code>MoveNext()</code> 停在位置 1 時保存了 <code>count = 10</code> 與暫停位置，第 2 次從下一行繼續，不會回到開頭重新執行 <code>int count = 0</code>；印出那行在 <code>count += 10</code> 之前，所以是 10。<code>Broken</code> 有 <code>yield return</code>，是迭代器，迭代器中不能用 <code>return</code> 回傳值（CS1622）；改成 <code>yield return 20;</code>，或整個方法改用 List 與 <code>return</code>。一般 <code>return</code> 交出整份結果後方法結束；<code>yield return</code> 每次交出一個元素後暫停，等下一次要求才繼續。</p></details>
+<p class="callout">稍後或隔天，不看教材寫一個依序 <code>yield return</code> 1、2、3 的方法，在每個 <code>yield return</code> 前後各加一行標記；先在紙上寫出 <code>foreach</code> 走完它的輸出，再執行核對。寫不出來時再查速查表。</p>
+</section>
+<footer><p>主要閱讀：<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#execution-of-an-iterator">Microsoft Learn：yield 陳述式的 Execution of an iterator</a>，對照它的輸出範例與本課的 <code>CountUp</code>。</p><p>邊界：呼叫方法與第一次 <code>MoveNext()</code> 的時間差在單元 5；<code>yield break</code>、中途 <code>break</code> 與清理在單元 6。本課不依賴編譯器產生的型別或欄位，編譯器狀態機為選讀。</p><nav><a href="../reference/yield-suspension.html">yield 暫停與繼續速查</a><a href="../../01-list-basics/yield筆記.md#unit-04">完整 Markdown 草稿</a><a href="../../03-enumerator-protocol/lessons/0003-enumerator-protocol.html">上一課：列舉器協定</a></nav><p>任何一行不清楚，都可以回聊天問我。此頁的練習只顯示當下回饋，重新整理即清除。</p></footer>
+</main></body></html>

@@ -1,6 +1,6 @@
 # yield 學習地圖
 
-目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 已完成最後驗收（resolved）；Ticket 02 已完成最後驗收（resolved）；Ticket 03 已完成最後驗收（resolved）。課程內容先集中在本暫存工作區，整套正式歸檔另由 Ticket 10 追蹤。
+目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 已完成最後驗收（resolved）；Ticket 02 已完成最後驗收（resolved）；Ticket 03 已完成最後驗收（resolved）；Ticket 04 教材已備妥，尚未最後驗收（claimed）。課程內容先集中在本暫存工作區，整套正式歸檔另由 Ticket 10 追蹤。
 
 ## Notes
 
