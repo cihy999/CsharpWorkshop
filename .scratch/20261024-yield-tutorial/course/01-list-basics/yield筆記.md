@@ -2,7 +2,7 @@
 
 開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)，第四單元見 [單元 4](#unit-04)。本文件保留完整草稿與原始素材。
 
-本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收；Ticket 04 教材已備妥，尚未進行最後驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至四單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
+本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收；Ticket 04 已於 2026-11-21 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至四單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
 
 範例專案：[YieldTutorial](YieldTutorial/)。
 
@@ -621,6 +621,7 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 | 寫法 | 結果 |
 |---|---|
 | 同一個方法裡有 `yield return 10;` 與 `return new List<int> { 20 };` | CS1622：無法從迭代器傳回值 |
+| 同一個方法裡有 `yield return 10;` 與不帶值的 `return;` | 同樣是 CS1622 |
 | 回傳型別寫成 `List<int>`，主體使用 `yield return` | CS1624：`List<int>` 不是 Iterator 介面類型 |
 
 這些寫法不放入共用專案，以免專案無法建置。本單元把兩種寫法放在兩個各自合法的方法中對照。
@@ -883,7 +884,7 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 能清楚表達以下三點即可，不要求背誦原句：
 
 - `count = 10`：第 1 次 `MoveNext()` 執行到位置 1 時暫停，保存了 `count` 的值 10 與暫停位置。第 2 次從位置 1 的下一行繼續，不會回到開頭重新執行 `int count = 0`；印出那行在 `count += 10` 之前，所以是 10，之後才變成 20。
-- `Broken` 不能編譯：方法中有 `yield return` 就是迭代器，迭代器中不能用 `return` 回傳值（CS1622）。改為 `yield return 20;`；若想一次回傳整份 List，則整個方法改用 List 與 `return`，不使用 `yield return`。
+- `Broken` 不能編譯：方法中有 `yield return` 就是迭代器，迭代器中不能出現 `return` 陳述式，不帶值的 `return;` 也不行（CS1622）。改為 `yield return 20;`；若想一次回傳整份 List，則整個方法改用 List 與 `return`，不使用 `yield return`。
 - 對照：一般 `return` 交出整份結果後方法就結束；`yield return` 每次交出一個元素後暫停，等下一次要求才繼續。
 
 ### 限制與相關概念

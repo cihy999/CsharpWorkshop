@@ -48,6 +48,8 @@ Category: enhancement
 
 ## Implementation Decisions
 
+- 2026-11-21 最後驗收：依學生要求完成 [Ticket 04](issues/04-yield-suspension.md#answer) 的驗收，標為 resolved。第四單元教材在 `course/04-yield-suspension/`，程式沿用 `course/01-list-basics/YieldTutorial/`；驗收時將「迭代器不能用 return 回傳值」統一修正為「迭代器中不能出現 return 陳述式」。正式歸檔由 Ticket 10 追蹤，本次尚未開始 Ticket 05。
+
 - 2026-11-07 最後驗收：依學生要求完成 [Ticket 03](issues/03-enumerator-protocol.md#answer) 的驗收，標為 resolved。第三單元教材在 `course/03-enumerator-protocol/`，程式沿用 `course/01-list-basics/YieldTutorial/`；正式歸檔由 Ticket 10 追蹤，本次尚未開始 Ticket 04。
 
 - 2026-11-07 最後驗收：依學生要求完成 [Ticket 02](issues/02-ienumerable-contract.md#answer) 的驗收，標為 resolved。第二單元教材在 `course/02-ienumerable-contract/`，程式沿用 `course/01-list-basics/YieldTutorial/`；正式歸檔由 Ticket 10 追蹤，本次尚未開始 Ticket 03。

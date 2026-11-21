@@ -1,6 +1,6 @@
 # yield 學習地圖
 
-目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 已完成最後驗收（resolved）；Ticket 02 已完成最後驗收（resolved）；Ticket 03 已完成最後驗收（resolved）；Ticket 04 教材已備妥，尚未最後驗收（claimed）。課程內容先集中在本暫存工作區，整套正式歸檔另由 Ticket 10 追蹤。
+目前階段：完整地圖與九張課程 Ticket 拆分皆已確認；[教材 spec](spec.md) 已發布。Ticket 01 已完成最後驗收（resolved）；Ticket 02 已完成最後驗收（resolved）；Ticket 03 已完成最後驗收（resolved）；Ticket 04 已完成最後驗收（resolved）。課程內容先集中在本暫存工作區，整套正式歸檔另由 Ticket 10 追蹤。
 
 ## Notes
 
@@ -8,6 +8,8 @@
 - 地圖描述教材的概念與相依關係，不記錄個人學習進度。
 
 ## Decisions-so-far
+
+2026-11-21 第四單元結案：[Ticket 04 最後驗收](issues/04-yield-suspension.md#answer) 全部通過並標為 resolved。共用專案建置成功；`01`～`04` 示範、解答與預設入口的輸出與專案 README 逐字一致，互動、視覺與連結沿用製作檢查結果。驗收時修正 CS1622 規則的敘述範圍；教材保留於暫存目錄，正式歸檔由 Ticket 10 追蹤；未開始 Ticket 05。
 
 2026-11-07 第三單元結案：[Ticket 03 最後驗收](issues/03-enumerator-protocol.md#answer) 全部通過並標為 resolved。共用專案建置成功；`01`～`03` 示範、解答與預設入口的輸出與文件逐字一致，互動、視覺與連結沿用製作檢查結果。教材保留於暫存目錄，正式筆記的 null 說法與正式歸檔由 Ticket 10 追蹤；未開始 Ticket 04。
 
