@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>05 · 迭代器方法何時真正執行？</title><link rel="stylesheet" href="../../01-list-basics/assets/course.css"><script src="../../01-list-basics/assets/quiz.js" defer></script></head>
+<body><main>
+<header><div class="eyebrow">C# WORKSHOP / 05</div><h1>呼叫了，還沒開始；<br>第一次 MoveNext 才動起來。</h1><p>這一課只做一件事：用事件標記排出時間線，看出呼叫迭代器方法、取得列舉器、每次 <code>MoveNext()</code> 時，方法主體各執行到哪裡。</p><p class="meta">約 12 分鐘 · .NET 10 · 教材草稿 · 來源查證 2026-11-21</p><nav><a href="#call">開始</a><a href="#sort">排序事件</a><a href="#change">修改練習</a><a href="../reference/deferred-execution.html">速查表</a><a href="../../04-yield-suspension/lessons/0004-yield-suspension.html">上一課</a></nav></header>
+<section id="call"><h2>01 / 呼叫方法，主體一行都還沒跑</h2><p>上一課看過：每次 <code>MoveNext()</code>，產生端從上次暫停處跑到下一個 <code>yield return</code>。那<strong>第一次 <code>MoveNext()</code> 之前</strong>呢？本課的產生端是這個迭代器方法，主體每一段都印出標記：</p>
+<pre><code>private static IEnumerable&lt;int&gt; Steps()
+{
+    Console.WriteLine("[產生端] 進入方法主體");
+    Console.WriteLine("[產生端] 產出 1");
+    yield return 1;
+
+    Console.WriteLine("[產生端] 從產出 1 之後繼續，產出 2");
+    yield return 2;
+
+    Console.WriteLine("[產生端] 從產出 2 之後繼續，產出 3");
+    yield return 3;
+
+    Console.WriteLine("[產生端] 從產出 3 之後繼續，走到方法結尾");
+}</code></pre>
+<p>消費端呼叫 <code>Steps()</code>、再呼叫 <code>GetEnumerator()</code>，但一次都不呼叫 <code>MoveNext()</code>。實測輸出：</p>
+<pre>[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 不再要求元素</pre>
+<p>沒有任何一行 <code>[產生端]</code>。呼叫迭代器方法只拿到一個「之後可以列舉」的物件；取得列舉器也還沒執行主體。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#execution-of-an-iterator">官方：呼叫迭代器不會立即執行它</a> · <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#15156-enumerable-objects">C# 規格：Enumerable objects</a></p>
+<form data-answer="b" data-feedback="呼叫 Steps() 只得到可列舉的物件，GetEnumerator() 只得到列舉器；兩者都還沒執行主體，所以產生端一行也沒印。"><fieldset><legend>呼叫 Steps() 並取得列舉器後，產生端印出了？</legend><label><input type="radio" name="call" value="a">印到第一個產出</label><label><input type="radio" name="call" value="b">一行也沒有印出</label><label><input type="radio" name="call" value="c">整個主體都印完</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="request"><h2>02 / 要幾個，就跑到第幾個</h2><p>三種情境用同一個消費端方法，只差在要求幾次：情境 1 是 0 次，情境 2 是 2 次，情境 3 是 4 次（第 4 次回傳 False）。</p>
+<pre><code>private static void RequestElements(IEnumerable&lt;int&gt; sequence, int requestCount)
+{
+    Console.WriteLine("[消費端] GetEnumerator() 之前");
+    using (IEnumerator&lt;int&gt; enumerator = sequence.GetEnumerator())
+    {
+        Console.WriteLine("[消費端] GetEnumerator() 之後");
+
+        for (int i = 1; i &lt;= requestCount; i++)
+        {
+            Console.WriteLine("[消費端] 第 " + i + " 次 MoveNext() 之前");
+            bool moved = enumerator.MoveNext();
+            if (moved)
+            {
+                Console.WriteLine("[消費端] 第 " + i + " 次 MoveNext() 之後：True，Current = " + enumerator.Current);
+            }
+            else
+            {
+                Console.WriteLine("[消費端] 第 " + i + " 次 MoveNext() 之後：False，序列結束");
+            }
+        }
+
+        Console.WriteLine("[消費端] 不再要求元素");
+    }
+}</code></pre>
+<table><thead><tr><th>消費端做的事</th><th>產生端執行的部分</th></tr></thead><tbody><tr><td>呼叫 <code>Steps()</code></td><td>無</td></tr><tr><td><code>GetEnumerator()</code></td><td>無</td></tr><tr><td>第 1 次 <code>MoveNext()</code></td><td>從方法開頭到 <code>yield return 1</code></td></tr><tr><td>第 2 次 <code>MoveNext()</code></td><td>從 <code>yield return 1</code> 之後到 <code>yield return 2</code></td></tr><tr><td>不再要求</td><td>無；<code>yield return 2</code> 之後的程式不會執行</td></tr></tbody></table>
+<p>這張表就是情境 2（只要求 2 個）。產生端只做被要求的那部分：消費端停下來，主體就停在 <code>yield return 2</code>，「從產出 2 之後繼續」永遠不會印出。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151552-advance-the-enumerator">C# 規格：第一次 MoveNext 從開頭執行</a></p>
+<form data-answer="a" data-feedback="產生端只在 MoveNext() 時往下執行；情境 2 只要求兩次，主體停在 yield return 2，後面那行沒有機會執行。"><fieldset><legend>情境 2 只要求 2 個元素，「從產出 2 之後繼續」會印出嗎？</legend><label><input type="radio" name="partial" value="a">不會，沒人再要求</label><label><input type="radio" name="partial" value="b">會，在結束使用時</label><label><input type="radio" name="partial" value="c">會，在第二次之後</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p class="callout">情境 2 離開 <code>using</code> 時會呼叫列舉器的 <code>Dispose()</code>。<code>Steps()</code> 沒有 <code>finally</code>，所以這時沒有輸出；提前停止與清理留到單元 6。</p>
+</section>
+<section id="type"><h2>03 / 延遲來自 yield，不是回傳型別</h2><p>單元 4 的 return 版也回傳 <code>IEnumerable&lt;int&gt;</code>。完整示範最後一段只呼叫它、不列舉：</p>
+<pre><code>private static IEnumerable&lt;int&gt; StepsWithList()
+{
+    Console.WriteLine("[產生端] 進入 StepsWithList() 主體，建立 List");
+    List&lt;int&gt; numbers = new List&lt;int&gt; { 1, 2, 3 };
+    Console.WriteLine("[產生端] 用 return 交出 List");
+    return numbers;
+}</code></pre>
+<pre>[消費端] 呼叫 StepsWithList() 之前
+[產生端] 進入 StepsWithList() 主體，建立 List
+[產生端] 用 return 交出 List
+[消費端] 呼叫 StepsWithList() 之後，尚未列舉</pre>
+<p>回傳型別一樣，主體卻在呼叫時就跑完了。所以本課的結論只針對<strong>主體含 <code>yield return</code> 的迭代器方法</strong>；只看到方法回傳 <code>IEnumerable&lt;T&gt;</code>，判斷不出它何時執行。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/iterators#understand-deferred-element-production">官方：只看 IEnumerable 無法推斷執行時機</a></p>
+<form data-answer="c" data-feedback="StepsWithList() 是一般方法，呼叫時就執行整個主體，再用 return 交出 List；延遲執行是迭代器方法的行為。"><fieldset><legend>StepsWithList() 也回傳 IEnumerable&lt;int&gt;，呼叫時主體會？</legend><label><input type="radio" name="type" value="a">等到列舉才執行</label><label><input type="radio" name="type" value="b">只執行到第一行</label><label><input type="radio" name="type" value="c">呼叫時立刻執行</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p>LINQ 的 <code>Where</code>、<code>Select</code> 等方法也有延遲行為，但各方法細節不同，不在本課範圍；這裡不把結論推廣到所有 <code>IEnumerable</code> 方法。</p>
+</section>
+<section id="sort"><h2>04 / 排序事件標記</h2><p>以下程式會印出部分標記。候選標記有 <code>A</code>、<code>B</code>、<code>C1</code>、<code>D2</code>、<code>E</code>、<code>P</code>、<code>Q</code>、<code>R</code>，其中有一個不會出現。先排出實際印出的順序，再核對。</p>
+<pre><code>static IEnumerable&lt;int&gt; Two()
+{
+    Console.WriteLine("P");
+    yield return 1;
+    Console.WriteLine("Q");
+    yield return 2;
+    Console.WriteLine("R");
+}
+
+IEnumerable&lt;int&gt; sequence = Two();
+Console.WriteLine("A");
+using (IEnumerator&lt;int&gt; e = sequence.GetEnumerator())
+{
+    Console.WriteLine("B");
+    if (e.MoveNext())
+    {
+        Console.WriteLine("C" + e.Current);
+    }
+    if (e.MoveNext())
+    {
+        Console.WriteLine("D" + e.Current);
+    }
+}
+Console.WriteLine("E");</code></pre>
+<form data-expected="A B P C1 Q D2 E" data-feedback="呼叫 Two() 與 GetEnumerator() 都不執行主體，所以 A、B 在 P 之前；每次 MoveNext() 才跑到下一個 yield return；只要求兩次，R 不會出現。"><label for="prediction">依序輸入實際印出的標記（每行一個，或用空格、逗號分隔；大小寫不拘）。</label><textarea id="prediction" spellcheck="false"></textarea><button type="submit">核對排序</button><p role="status" class="feedback"></p></form>
+<noscript><p>互動回饋需要 JavaScript。你也可以在紙上作答，再展開下方解答。</p></noscript>
+<details><summary>排序題解答與原因</summary><pre>A
+B
+P
+C1
+Q
+D2
+E</pre><p>呼叫 <code>Two()</code> 時主體沒有執行，所以先印 A；<code>GetEnumerator()</code> 也不執行主體，接著印 B。第 1 次 <code>MoveNext()</code> 從開頭執行，印出 P 後停在 <code>yield return 1</code>，消費端印 C1；第 2 次從下一行繼續，印出 Q 後停在 <code>yield return 2</code>，消費端印 D2。之後沒有再要求，R 那一行不會執行，離開 <code>using</code> 後印 E。這段程式於 2026-11-21 以 .NET 10 在暫存專案實測。</p></details>
+<h3>執行真正的 C# 範例</h3><p>在 <code>.scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial</code> 資料夾的終端機執行：</p><pre><code>dotnet run -- 05</code></pre><p>完整示範依序跑三種情境：只取得列舉器、只要求 2 個元素、要求到序列結束；最後是 <code>StepsWithList()</code> 的對照。順序全由輸出的先後決定，程式沒有等待或計時。先找出每個情境裡第一行 <code>[產生端]</code> 出現在哪一行 <code>[消費端]</code> 之後。<a href="../../01-list-basics/YieldTutorial/README.md">完整輸出與 repo 根目錄執行指令</a></p>
+</section>
+<section id="change"><h2>05 / 移動一行，再預測</h2><p>目標：只移動主體裡的一行輸出，重新預測三種情境。</p><ol><li>在 <code>DeferredExecution.cs</code> 新增 <code>StepsMovedExercise()</code>，先複製 <code>Steps()</code>。</li><li>把第一行 <code>Console.WriteLine("[產生端] 進入方法主體");</code> 移到 <code>yield return 2;</code> 之後、「從產出 2 之後繼續」那行之前。</li><li>這行已不在開頭，把文字改成 <code>"[產生端] 移動過來的標記"</code>。</li><li>仿照 <code>Run()</code> 的三個情境改呼叫新方法。要執行時，可暫時在 <code>Program.cs</code> 加一個選項（例如 <code>05-exercise</code>），練習後再還原。</li></ol><p>先預測：三種情境中，這行各會不會出現？若出現，在第幾次 <code>MoveNext()</code> 時？</p>
+<details><summary>修改題參考解</summary><pre><code>private static IEnumerable&lt;int&gt; StepsMoved()
+{
+    Console.WriteLine("[產生端] 產出 1");
+    yield return 1;
+
+    Console.WriteLine("[產生端] 從產出 1 之後繼續，產出 2");
+    yield return 2;
+
+    Console.WriteLine("[產生端] 移動過來的標記");
+    Console.WriteLine("[產生端] 從產出 2 之後繼續，產出 3");
+    yield return 3;
+
+    Console.WriteLine("[產生端] 從產出 3 之後繼續，走到方法結尾");
+}</code></pre><table><thead><tr><th>情境</th><th>「移動過來的標記」</th></tr></thead><tbody><tr><td>1：不要求元素</td><td>不出現</td></tr><tr><td>2：只要求 2 個</td><td>不出現</td></tr><tr><td>3：要求到結束</td><td>第 3 次 <code>MoveNext()</code> 時，緊接在「從產出 2 之後繼續」那行之前</td></tr></tbody></table><p>情境 3 的實測片段：</p><pre>[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 第 3 次 MoveNext() 之前
+[產生端] 移動過來的標記
+[產生端] 從產出 2 之後繼續，產出 3
+[消費端] 第 3 次 MoveNext() 之後：True，Current = 3</pre><p>原本開頭那行在第 1 次 <code>MoveNext()</code> 時印出；移到 <code>yield return 2</code> 之後，就要等第 3 次要求才會執行，只要求 2 個時永遠不印。一行程式何時執行，取決於它在哪兩個 <code>yield return</code> 之間，以及消費端要求了幾次。專案另附獨立解答：<code>dotnet run -- 05-answer</code>。</p></details>
+<h3>合上教材，用自己的話說</h3><p>回答兩題。你可以把解釋貼回聊天，我會依你的說法補充。</p><ol><li>情境 1 呼叫了 <code>Steps()</code> 也取得了列舉器，產生端卻一行都沒印。主體什麼時候才開始執行？情境 2 為什麼看不到「從產出 2 之後繼續」？</li><li>有人說：「這個方法回傳 <code>IEnumerable&lt;int&gt;</code>，所以呼叫時不會執行。」用本課的對照說明這句話哪裡不對。</li></ol>
+<details><summary>解釋題判準</summary><p>能說出三點即可：呼叫迭代器方法與 <code>GetEnumerator()</code> 都不執行主體，第 1 次 <code>MoveNext()</code> 才從開頭執行到第一個 <code>yield return</code>。之後每次要求只再往下跑一段；情境 2 只要求兩次，主體停在 <code>yield return 2</code>，後面的程式沒有執行。延遲執行是迭代器方法（主體含 <code>yield return</code>）的行為，不是 <code>IEnumerable&lt;int&gt;</code> 這個回傳型別造成的：<code>StepsWithList()</code> 回傳型別相同，呼叫時就跑完主體。</p></details>
+<p class="callout">稍後或隔天，不看教材寫一個在開頭與每個 <code>yield return</code> 之後都印標記的迭代器，再寫一段消費端：呼叫、印一行、取得列舉器、只 <code>MoveNext()</code> 一次。先在紙上寫出輸出，再執行核對。寫不出來時再查速查表。</p>
+</section>
+<footer><p>主要閱讀：<a href="https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/iterators#understand-deferred-element-production">Microsoft Learn：Iterators 的 Understand deferred element production</a>，對照它的 <code>Sequence created.</code> 輸出與本課的情境 1。</p><p>邊界：<code>yield break</code>、<code>foreach</code> 中途 <code>break</code> 與清理在單元 6；同一序列再次列舉在單元 7。本課只談同步迭代器方法，不推廣到 LINQ 或所有 <code>IEnumerable</code> 方法；不依賴編譯器產生的型別或欄位。</p><nav><a href="../reference/deferred-execution.html">延遲執行速查</a><a href="../../01-list-basics/yield筆記.md#unit-05">完整 Markdown 草稿</a><a href="../../04-yield-suspension/lessons/0004-yield-suspension.html">上一課：yield 暫停與繼續</a></nav><p>任何一行不清楚，都可以回聊天問我。此頁的練習只顯示當下回饋，重新整理即清除。</p></footer>
+</main></body></html>

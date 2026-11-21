@@ -1,6 +1,6 @@
 # 從 List 到 yield
 
-開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)，第四單元見 [單元 4](#unit-04)。本文件保留完整草稿與原始素材。
+開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)，第四單元見 [單元 4](#unit-04)，第五單元見 [單元 5](#unit-05)。本文件保留完整草稿與原始素材。
 
 本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收；Ticket 04 已於 2026-11-21 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至四單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
 
@@ -894,6 +894,299 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 - 迭代器有使用限制：參數不能是 `ref`、`out` 或 `in`，不能寫在 lambda 中，`yield return` 不能放在 `catch`、`finally` 或帶有 `catch` 的 `try` 中。[官方：yield 的使用限制](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield)。
 - C# 規格只描述列舉器物件的外部行為，並說明它「通常」由編譯器產生的類別實作，未規定作法。本單元只觀察公開行為（`MoveNext()` 的回傳值、`Current` 與輸出），不依賴產生的型別名稱、欄位或反編譯結果。編譯器狀態機為選讀，不在主線範圍。[C# 規格：列舉器物件](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#15155-enumerator-objects)。
 - 回到原案例：`EnumerateRoundFacts` 在勝利且滿血時，會依序經過兩個 `yield return`，所以 `foreach` 先取得 `RoundFactSelfWin`，再取得 `RoundFactSelfPerfect`；之後從暫停處往下檢查其他條件。完整案例在單元 9 整理。
+
+[下一單元](#unit-05)把時間往前推：呼叫迭代器方法、取得列舉器與第一次 `MoveNext()` 時，方法主體各執行到哪裡。
+
+<a id="unit-05"></a>
+
+## 單元 5：迭代器方法何時真正執行？
+
+開始上課請開啟 [第五單元 HTML 短課程](../05-deferred-execution/lessons/0005-deferred-execution.html)；複習可看 [迭代器延遲執行速查](../05-deferred-execution/reference/deferred-execution.html)。
+
+適用版本：本單元以 .NET 10 驗證（SDK 11.0.100 建置 `net10.0`，於 .NET Runtime 10.0.15 執行）。驗證日期：2026-11-21。
+
+### 簡短說明
+
+單元 4 一律在同一行呼叫迭代器方法並取得列舉器，只看「每次要求元素」時產生端執行到哪裡。本單元把這一行拆開，分成三個時間點觀察：
+
+| 消費端做的事 | 迭代器方法主體 |
+|---|---|
+| 呼叫迭代器方法 | 不執行；只回傳一個可列舉的物件 |
+| 對它呼叫 `GetEnumerator()` | 不執行；只回傳列舉器 |
+| 第 1 次 `MoveNext()` | 從方法開頭執行到第一個 `yield return`（或方法結尾） |
+| 之後每次 `MoveNext()` | 從上次暫停處的下一行執行到下一個 `yield return`（或方法結尾） |
+| 不再要求 | 暫停處之後的程式不執行 |
+
+呼叫迭代器方法時不執行主體、開始列舉才執行，稱為**延遲執行**（deferred execution）。消費端從不列舉，主體就一行都不會執行；只要求部分元素，主體就停在最後一次交出元素的 `yield return`。[官方：Iterators 的延遲產生元素](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/iterators#understand-deferred-element-production)、[官方：迭代器的執行](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#execution-of-an-iterator)。
+
+C# 規格把「呼叫」與「取得列舉器」分開描述：回傳可列舉介面的迭代器被呼叫時，不立即執行迭代器區塊，而是回傳一個可列舉物件；它的 `GetEnumerator()` 回傳列舉器；列舉器第一次 `MoveNext()` 時，才從迭代器區塊的開頭執行。[C# 規格：Enumerable objects](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#15156-enumerable-objects)、[C# 規格：MoveNext 的行為](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151552-advance-the-enumerator)。
+
+**結論只針對迭代器方法。** 延遲執行來自主體中的 `yield return`，不是回傳型別 `IEnumerable<int>` 造成的。單元 4 的 return 版同樣回傳 `IEnumerable<int>`，呼叫時就跑完整個主體。官方文件也提醒，迭代器與集合都可以公開 `IEnumerable<T>`，只看介面無法推斷執行時機。LINQ 等其他方法的延遲行為各有規則，不在本單元範圍。
+
+### 範例
+
+以下是 [DeferredExecution.cs](YieldTutorial/DeferredExecution.cs) 中的產生端。`Steps()` 是迭代器；`StepsWithList()` 是同樣回傳 `IEnumerable<int>` 的一般方法，作為對照：
+
+```csharp
+private static IEnumerable<int> Steps()
+{
+    Console.WriteLine("[產生端] 進入方法主體");
+    Console.WriteLine("[產生端] 產出 1");
+    yield return 1;
+
+    Console.WriteLine("[產生端] 從產出 1 之後繼續，產出 2");
+    yield return 2;
+
+    Console.WriteLine("[產生端] 從產出 2 之後繼續，產出 3");
+    yield return 3;
+
+    Console.WriteLine("[產生端] 從產出 3 之後繼續，走到方法結尾");
+}
+
+private static IEnumerable<int> StepsWithList()
+{
+    Console.WriteLine("[產生端] 進入 StepsWithList() 主體，建立 List");
+    List<int> numbers = new List<int> { 1, 2, 3 };
+    Console.WriteLine("[產生端] 用 return 交出 List");
+    return numbers;
+}
+```
+
+消費端把每個動作前後都印出標記。`RequestElements` 取得列舉器後，呼叫 `MoveNext()` 指定的次數：
+
+```csharp
+private static void RequestElements(IEnumerable<int> sequence, int requestCount)
+{
+    Console.WriteLine("[消費端] GetEnumerator() 之前");
+    using (IEnumerator<int> enumerator = sequence.GetEnumerator())
+    {
+        Console.WriteLine("[消費端] GetEnumerator() 之後");
+
+        for (int i = 1; i <= requestCount; i++)
+        {
+            Console.WriteLine("[消費端] 第 " + i + " 次 MoveNext() 之前");
+            bool moved = enumerator.MoveNext();
+            if (moved)
+            {
+                Console.WriteLine("[消費端] 第 " + i + " 次 MoveNext() 之後：True，Current = " + enumerator.Current);
+            }
+            else
+            {
+                Console.WriteLine("[消費端] 第 " + i + " 次 MoveNext() 之後：False，序列結束");
+            }
+        }
+
+        Console.WriteLine("[消費端] 不再要求元素");
+    }
+}
+```
+
+`Run()` 依序執行三種情境，只差在要求幾次；呼叫方法寫在 `RequestElements` 之外，讓「呼叫前後」與「GetEnumerator() 前後」成為不同的標記。最後呼叫 `StepsWithList()` 但不列舉：
+
+```csharp
+Console.WriteLine("情境 1：取得列舉器，但不要求元素");
+Console.WriteLine("[消費端] 呼叫 Steps() 之前");
+IEnumerable<int> first = Steps();
+Console.WriteLine("[消費端] 呼叫 Steps() 之後");
+RequestElements(first, 0);
+
+Console.WriteLine("情境 2：只要求 2 個元素");
+Console.WriteLine("[消費端] 呼叫 Steps() 之前");
+IEnumerable<int> second = Steps();
+Console.WriteLine("[消費端] 呼叫 Steps() 之後");
+RequestElements(second, 2);
+
+Console.WriteLine("情境 3：要求到序列結束");
+Console.WriteLine("[消費端] 呼叫 Steps() 之前");
+IEnumerable<int> third = Steps();
+Console.WriteLine("[消費端] 呼叫 Steps() 之後");
+RequestElements(third, 4);
+
+Console.WriteLine("對照：同樣回傳 IEnumerable<int>，但不是迭代器");
+Console.WriteLine("[消費端] 呼叫 StepsWithList() 之前");
+IEnumerable<int> withList = StepsWithList();
+Console.WriteLine("[消費端] 呼叫 StepsWithList() 之後，尚未列舉");
+```
+
+程式只有一個執行緒，沒有等待或計時；事件順序完全由輸出的先後決定。
+
+### 預測輸出
+
+先不執行程式，寫下你的預測：
+
+1. 情境 1 會出現幾行 `[產生端]`？
+2. 情境 2 的第一行 `[產生端]` 出現在哪一行 `[消費端]` 之後？
+3. 情境 2 結束時，主體停在哪個 `yield return`？`Steps()` 的哪幾行輸出沒有出現？
+4. 情境 3 的第 4 次 `MoveNext()` 回傳什麼？產生端最後印出哪一行？
+5. 對照段落中，`StepsWithList()` 的兩行 `[產生端]` 出現在「呼叫 StepsWithList() 之後」之前還是之後？
+
+### 執行觀察
+
+從 repo 根目錄執行：
+
+```powershell
+dotnet build .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial/YieldTutorial.csproj
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 05
+```
+
+觀察三件事：每個情境的第一行 `[產生端]` 都在「第 1 次 MoveNext() 之前」之後；情境 2 沒有「從產出 2 之後繼續」；`StepsWithList()` 的主體在呼叫時就印完。
+
+### 修改練習
+
+1. 在 `DeferredExecution.cs` 新增方法 `StepsMovedExercise()`，內容先複製 `Steps()`。
+2. 把第一行 `Console.WriteLine("[產生端] 進入方法主體");` 移到 `yield return 2;` 之後、「從產出 2 之後繼續」那行之前。
+3. 這行已不在開頭，把文字改成 `"[產生端] 移動過來的標記"`。
+4. 仿照 `Run()` 的三個情境改呼叫新方法。
+
+先預測：三種情境中，「移動過來的標記」各會不會出現？若出現，在第幾次 `MoveNext()` 時？要執行時，可暫時在 `Program.cs` 加一個選項（例如 `05-exercise`），練習後再還原。
+
+解釋題：
+
+1. 情境 1 呼叫了 `Steps()` 也取得了列舉器，產生端卻一行都沒印。主體什麼時候才開始執行？情境 2 為什麼看不到「從產出 2 之後繼續」？
+2. 有人說：「這個方法回傳 `IEnumerable<int>`，所以呼叫時不會執行。」用本單元的對照說明這句話哪裡不對。
+
+### 解答與判準
+
+#### 預測題解答
+
+`05` 實測輸出如下：
+
+```text
+情境 1：取得列舉器，但不要求元素
+[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 不再要求元素
+情境 2：只要求 2 個元素
+[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 進入方法主體
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 不再要求元素
+情境 3：要求到序列結束
+[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 進入方法主體
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 第 3 次 MoveNext() 之前
+[產生端] 從產出 2 之後繼續，產出 3
+[消費端] 第 3 次 MoveNext() 之後：True，Current = 3
+[消費端] 第 4 次 MoveNext() 之前
+[產生端] 從產出 3 之後繼續，走到方法結尾
+[消費端] 第 4 次 MoveNext() 之後：False，序列結束
+[消費端] 不再要求元素
+對照：同樣回傳 IEnumerable<int>，但不是迭代器
+[消費端] 呼叫 StepsWithList() 之前
+[產生端] 進入 StepsWithList() 主體，建立 List
+[產生端] 用 return 交出 List
+[消費端] 呼叫 StepsWithList() 之後，尚未列舉
+```
+
+1. 情境 1 沒有任何 `[產生端]`：呼叫 `Steps()` 與 `GetEnumerator()` 都不執行主體，而這個情境一次都沒有呼叫 `MoveNext()`。
+2. 三個情境中，第一行 `[產生端]` 都緊接在「第 1 次 MoveNext() 之前」之後，不在「呼叫 Steps() 之後」或「GetEnumerator() 之後」之後。
+3. 情境 2 停在 `yield return 2`。「從產出 2 之後繼續，產出 3」與「從產出 3 之後繼續，走到方法結尾」都沒有出現，因為沒有第 3、4 次要求。離開 `using` 時會呼叫列舉器的 `Dispose()`，`Steps()` 沒有 `finally`，所以沒有輸出；清理行為留到單元 6。
+4. 第 4 次回傳 `False`；產生端從 `yield return 3` 之後執行到方法結尾，最後印出「從產出 3 之後繼續，走到方法結尾」。
+5. `StepsWithList()` 的兩行在「呼叫之後」之前：它不是迭代器，呼叫時就執行整個主體，再用 `return` 交出 List。
+
+#### 修改題參考解
+
+以下是同專案 `StepsMoved()` 的內容；`RunExerciseAnswer()` 以相同的三個情境呼叫它，可直接以 `05-answer` 選項執行：
+
+```csharp
+private static IEnumerable<int> StepsMoved()
+{
+    Console.WriteLine("[產生端] 產出 1");
+    yield return 1;
+
+    Console.WriteLine("[產生端] 從產出 1 之後繼續，產出 2");
+    yield return 2;
+
+    Console.WriteLine("[產生端] 移動過來的標記");
+    Console.WriteLine("[產生端] 從產出 2 之後繼續，產出 3");
+    yield return 3;
+
+    Console.WriteLine("[產生端] 從產出 3 之後繼續，走到方法結尾");
+}
+```
+
+```powershell
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 05-answer
+```
+
+實測輸出：
+
+```text
+情境 1：取得列舉器，但不要求元素
+[消費端] 呼叫 StepsMoved() 之前
+[消費端] 呼叫 StepsMoved() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 不再要求元素
+情境 2：只要求 2 個元素
+[消費端] 呼叫 StepsMoved() 之前
+[消費端] 呼叫 StepsMoved() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 不再要求元素
+情境 3：要求到序列結束
+[消費端] 呼叫 StepsMoved() 之前
+[消費端] 呼叫 StepsMoved() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 第 3 次 MoveNext() 之前
+[產生端] 移動過來的標記
+[產生端] 從產出 2 之後繼續，產出 3
+[消費端] 第 3 次 MoveNext() 之後：True，Current = 3
+[消費端] 第 4 次 MoveNext() 之前
+[產生端] 從產出 3 之後繼續，走到方法結尾
+[消費端] 第 4 次 MoveNext() 之後：False，序列結束
+[消費端] 不再要求元素
+```
+
+「移動過來的標記」在情境 1、2 都不出現，只在情境 3 的第 3 次 `MoveNext()` 時出現。它前面有兩個 `yield return`，所以要等第 3 次要求才會執行；只要求 2 個時永遠不印。原本在開頭時，第 1 次 `MoveNext()` 就會印出。一行程式何時執行，取決於它在哪兩個 `yield return` 之間，以及消費端要求了幾次。
+
+#### 解釋題判準
+
+能清楚表達以下三點即可，不要求背誦原句：
+
+- 呼叫迭代器方法與 `GetEnumerator()` 都不執行主體；第 1 次 `MoveNext()` 才從開頭執行到第一個 `yield return`。
+- 之後每次要求只再往下執行一段。情境 2 只要求兩次，主體停在 `yield return 2`，之後的程式沒有被要求執行，所以「從產出 2 之後繼續」不會出現。
+- 延遲執行是迭代器方法（主體含 `yield return`）的行為，不是 `IEnumerable<int>` 回傳型別造成的：`StepsWithList()` 回傳型別相同，呼叫時就跑完主體。只看回傳型別，判斷不出方法何時執行。
+
+### 限制與相關概念
+
+- 本單元的結論限定於同步、主體含 `yield return` 的迭代器方法。LINQ 的 `Where`、`Select` 等方法也有延遲行為，但各運算細節不同，未在此驗證；也不推廣到所有回傳 `IEnumerable<T>` 的方法。
+- 情境 2 離開 `using` 時會呼叫 `Dispose()`。`yield break`、`foreach` 中途 `break`，以及 `Dispose()` 與 `finally` 的清理行為留到單元 6。
+- 每次呼叫 `Steps()` 都得到新的序列；同一個序列再次列舉時主體會不會重跑，留到單元 7。
+- C# 規格只描述可列舉物件與列舉器的外部行為，未規定實作方式。本單元只觀察公開行為（輸出順序、`MoveNext()` 的回傳值與 `Current`），不依賴編譯器產生的型別、欄位或反編譯結果。[C# 規格：列舉器物件](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#15155-enumerator-objects)。
+- 回到原案例：`EnumerateRoundFacts(round)` 被呼叫時還沒檢查任何條件；`foreach` 第一次要求元素時，才開始判斷勝負。若消費端只取第一個事實就停下，後面的條件也不會被檢查。完整案例在單元 9 整理。
 
 ## 原有回合事實筆記（保留原文）
 

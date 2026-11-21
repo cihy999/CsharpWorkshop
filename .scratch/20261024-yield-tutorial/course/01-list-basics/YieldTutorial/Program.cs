@@ -33,8 +33,14 @@ namespace YieldTutorial
                 case "04-answer":
                     YieldSuspension.RunExerciseAnswer();
                     break;
+                case "05":
+                    DeferredExecution.Run();
+                    break;
+                case "05-answer":
+                    DeferredExecution.RunExerciseAnswer();
+                    break;
                 default:
-                    Console.Error.WriteLine("可用選項：01、01-answer、02、02-answer、03、03-answer、04、04-answer");
+                    Console.Error.WriteLine("可用選項：01、01-answer、02、02-answer、03、03-answer、04、04-answer、05、05-answer");
                     Environment.ExitCode = 1;
                     break;
             }

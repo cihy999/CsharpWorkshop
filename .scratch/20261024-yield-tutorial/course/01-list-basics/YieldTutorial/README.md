@@ -1,8 +1,8 @@
 # List 與 yield 共用 Console 範例
 
-教材：[主線筆記](../yield筆記.md)，[單元 1](../yield筆記.md#unit-01)、[單元 2](../yield筆記.md#unit-02)、[單元 3](../yield筆記.md#unit-03)、[單元 4](../yield筆記.md#unit-04)。
+教材：[主線筆記](../yield筆記.md)，[單元 1](../yield筆記.md#unit-01)、[單元 2](../yield筆記.md#unit-02)、[單元 3](../yield筆記.md#unit-03)、[單元 4](../yield筆記.md#unit-04)、[單元 5](../yield筆記.md#unit-05)。
 
-開始上課：[單元 1 HTML 短課程](../lessons/0001-list-basics.html)、[單元 2 HTML 短課程](../../02-ienumerable-contract/lessons/0002-ienumerable-contract.html)、[單元 3 HTML 短課程](../../03-enumerator-protocol/lessons/0003-enumerator-protocol.html)、[單元 4 HTML 短課程](../../04-yield-suspension/lessons/0004-yield-suspension.html)；複習：[List 基礎速查](../reference/list-basics.html)、[IEnumerable 約定速查](../../02-ienumerable-contract/reference/ienumerable-contract.html)、[列舉器協定速查](../../03-enumerator-protocol/reference/enumerator-protocol.html)、[yield 暫停與繼續速查](../../04-yield-suspension/reference/yield-suspension.html)。
+開始上課：[單元 1 HTML 短課程](../lessons/0001-list-basics.html)、[單元 2 HTML 短課程](../../02-ienumerable-contract/lessons/0002-ienumerable-contract.html)、[單元 3 HTML 短課程](../../03-enumerator-protocol/lessons/0003-enumerator-protocol.html)、[單元 4 HTML 短課程](../../04-yield-suspension/lessons/0004-yield-suspension.html)、[單元 5 HTML 短課程](../../05-deferred-execution/lessons/0005-deferred-execution.html)；複習：[List 基礎速查](../reference/list-basics.html)、[IEnumerable 約定速查](../../02-ienumerable-contract/reference/ienumerable-contract.html)、[列舉器協定速查](../../03-enumerator-protocol/reference/enumerator-protocol.html)、[yield 暫停與繼續速查](../../04-yield-suspension/reference/yield-suspension.html)、[迭代器延遲執行速查](../../05-deferred-execution/reference/deferred-execution.html)。
 
 目標框架：`net10.0`。2026-10-24 確認本機 SDK 為 `10.0.402`，依可用 SDK 選用 .NET 10；未修改既有範例框架。2026-11-21 本機 SDK 已更新為 `11.0.100`，仍以 `net10.0` 建置，並於 .NET Runtime 10.0.15 執行；目標框架未變更。無額外 NuGet 套件。
 
@@ -18,11 +18,13 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 03-answer
 dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 04
 dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 04-answer
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 05
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 05-answer
 ```
 
 在本資料夾內執行時，可改用 `dotnet run -- 02` 等較短指令。
 
-省略選項時預設執行 `01`。`Program.cs` 負責選擇單元；`ListBasics.cs` 包含第一單元，`EnumerableContract.cs` 包含第二單元，`EnumeratorProtocol.cs` 包含第三單元，`YieldSuspension.cs` 包含第四單元，各自附修改題參考解。後續單元沿用同一專案。
+省略選項時預設執行 `01`。`Program.cs` 負責選擇單元；`ListBasics.cs` 包含第一單元，`EnumerableContract.cs` 包含第二單元，`EnumeratorProtocol.cs` 包含第三單元，`YieldSuspension.cs` 包含第四單元，`DeferredExecution.cs` 包含第五單元，各自附修改題參考解。後續單元沿用同一專案。
 
 `01` 固定輸出：
 
@@ -170,4 +172,94 @@ yield return 寫法：
 [消費端] 取得 8
 [產生端] 從位置 3 之後繼續，走到方法結尾
 [消費端] 共取得 4 個值
+```
+
+`05` 固定輸出：
+
+```text
+情境 1：取得列舉器，但不要求元素
+[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 不再要求元素
+情境 2：只要求 2 個元素
+[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 進入方法主體
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 不再要求元素
+情境 3：要求到序列結束
+[消費端] 呼叫 Steps() 之前
+[消費端] 呼叫 Steps() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 進入方法主體
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 第 3 次 MoveNext() 之前
+[產生端] 從產出 2 之後繼續，產出 3
+[消費端] 第 3 次 MoveNext() 之後：True，Current = 3
+[消費端] 第 4 次 MoveNext() 之前
+[產生端] 從產出 3 之後繼續，走到方法結尾
+[消費端] 第 4 次 MoveNext() 之後：False，序列結束
+[消費端] 不再要求元素
+對照：同樣回傳 IEnumerable<int>，但不是迭代器
+[消費端] 呼叫 StepsWithList() 之前
+[產生端] 進入 StepsWithList() 主體，建立 List
+[產生端] 用 return 交出 List
+[消費端] 呼叫 StepsWithList() 之後，尚未列舉
+```
+
+`05-answer` 固定輸出：
+
+```text
+情境 1：取得列舉器，但不要求元素
+[消費端] 呼叫 StepsMoved() 之前
+[消費端] 呼叫 StepsMoved() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 不再要求元素
+情境 2：只要求 2 個元素
+[消費端] 呼叫 StepsMoved() 之前
+[消費端] 呼叫 StepsMoved() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 不再要求元素
+情境 3：要求到序列結束
+[消費端] 呼叫 StepsMoved() 之前
+[消費端] 呼叫 StepsMoved() 之後
+[消費端] GetEnumerator() 之前
+[消費端] GetEnumerator() 之後
+[消費端] 第 1 次 MoveNext() 之前
+[產生端] 產出 1
+[消費端] 第 1 次 MoveNext() 之後：True，Current = 1
+[消費端] 第 2 次 MoveNext() 之前
+[產生端] 從產出 1 之後繼續，產出 2
+[消費端] 第 2 次 MoveNext() 之後：True，Current = 2
+[消費端] 第 3 次 MoveNext() 之前
+[產生端] 移動過來的標記
+[產生端] 從產出 2 之後繼續，產出 3
+[消費端] 第 3 次 MoveNext() 之後：True，Current = 3
+[消費端] 第 4 次 MoveNext() 之前
+[產生端] 從產出 3 之後繼續，走到方法結尾
+[消費端] 第 4 次 MoveNext() 之後：False，序列結束
+[消費端] 不再要求元素
 ```
