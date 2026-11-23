@@ -1,10 +1,10 @@
 # List 與 yield 共用 Console 範例
 
-教材：[主線筆記](../yield筆記.md)，[單元 1](../yield筆記.md#unit-01)、[單元 2](../yield筆記.md#unit-02)、[單元 3](../yield筆記.md#unit-03)、[單元 4](../yield筆記.md#unit-04)、[單元 5](../yield筆記.md#unit-05)。
+教材：[主線筆記](../yield筆記.md)，[單元 1](../yield筆記.md#unit-01)、[單元 2](../yield筆記.md#unit-02)、[單元 3](../yield筆記.md#unit-03)、[單元 4](../yield筆記.md#unit-04)、[單元 5](../yield筆記.md#unit-05)、[單元 6](../yield筆記.md#unit-06)。
 
-開始上課：[單元 1 HTML 短課程](../lessons/0001-list-basics.html)、[單元 2 HTML 短課程](../../02-ienumerable-contract/lessons/0002-ienumerable-contract.html)、[單元 3 HTML 短課程](../../03-enumerator-protocol/lessons/0003-enumerator-protocol.html)、[單元 4 HTML 短課程](../../04-yield-suspension/lessons/0004-yield-suspension.html)、[單元 5 HTML 短課程](../../05-deferred-execution/lessons/0005-deferred-execution.html)；複習：[List 基礎速查](../reference/list-basics.html)、[IEnumerable 約定速查](../../02-ienumerable-contract/reference/ienumerable-contract.html)、[列舉器協定速查](../../03-enumerator-protocol/reference/enumerator-protocol.html)、[yield 暫停與繼續速查](../../04-yield-suspension/reference/yield-suspension.html)、[迭代器延遲執行速查](../../05-deferred-execution/reference/deferred-execution.html)。
+開始上課：[單元 1 HTML 短課程](../lessons/0001-list-basics.html)、[單元 2 HTML 短課程](../../02-ienumerable-contract/lessons/0002-ienumerable-contract.html)、[單元 3 HTML 短課程](../../03-enumerator-protocol/lessons/0003-enumerator-protocol.html)、[單元 4 HTML 短課程](../../04-yield-suspension/lessons/0004-yield-suspension.html)、[單元 5 HTML 短課程](../../05-deferred-execution/lessons/0005-deferred-execution.html)、[單元 6 HTML 短課程](../../06-termination-and-cleanup/lessons/0006-termination-and-cleanup.html)；複習：[List 基礎速查](../reference/list-basics.html)、[IEnumerable 約定速查](../../02-ienumerable-contract/reference/ienumerable-contract.html)、[列舉器協定速查](../../03-enumerator-protocol/reference/enumerator-protocol.html)、[yield 暫停與繼續速查](../../04-yield-suspension/reference/yield-suspension.html)、[迭代器延遲執行速查](../../05-deferred-execution/reference/deferred-execution.html)、[序列結束、提前停止與清理速查](../../06-termination-and-cleanup/reference/termination-and-cleanup.html)。
 
-目標框架：`net10.0`。2026-10-24 確認本機 SDK 為 `10.0.402`，依可用 SDK 選用 .NET 10；未修改既有範例框架。2026-11-21 本機 SDK 已更新為 `11.0.100`，仍以 `net10.0` 建置，並於 .NET Runtime 10.0.15 執行；目標框架未變更。無額外 NuGet 套件。
+目標框架：`net10.0`。2026-10-24 確認本機 SDK 為 `10.0.402`，依可用 SDK 選用 .NET 10；未修改既有範例框架。2026-11-23 本機 SDK 為 `11.0.100`，仍以 `net10.0` 建置，並於 .NET Runtime 10.0.15 執行；目標框架未變更。無額外 NuGet 套件。
 
 從 repo 根目錄執行：
 
@@ -20,11 +20,13 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 04-answer
 dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 05
 dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 05-answer
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 06
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 06-answer
 ```
 
 在本資料夾內執行時，可改用 `dotnet run -- 02` 等較短指令。
 
-省略選項時預設執行 `01`。`Program.cs` 負責選擇單元；`ListBasics.cs` 包含第一單元，`EnumerableContract.cs` 包含第二單元，`EnumeratorProtocol.cs` 包含第三單元，`YieldSuspension.cs` 包含第四單元，`DeferredExecution.cs` 包含第五單元，各自附修改題參考解。後續單元沿用同一專案。
+省略選項時預設執行 `01`。`Program.cs` 負責選擇單元；`ListBasics.cs` 包含第一單元，`EnumerableContract.cs` 包含第二單元，`EnumeratorProtocol.cs` 包含第三單元，`YieldSuspension.cs` 包含第四單元，`DeferredExecution.cs` 包含第五單元，`TerminationAndCleanup.cs` 包含第六單元，各自附修改題參考解。後續單元沿用同一專案。
 
 `01` 固定輸出：
 
@@ -262,4 +264,75 @@ yield return 寫法：
 [產生端] 從產出 3 之後繼續，走到方法結尾
 [消費端] 第 4 次 MoveNext() 之後：False，序列結束
 [消費端] 不再要求元素
+```
+
+`06` 固定輸出：
+
+```text
+路徑 1：正常走到方法結尾
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[產生端] 從產出 2 之後繼續
+[產生端] 產出 3
+[消費端] 取得 3
+[產生端] 從產出 3 之後繼續
+[產生端] 迴圈正常走完
+[產生端] finally：釋放資源
+[產生端] 走到方法結尾
+[消費端] foreach 結束
+路徑 2：產生端 yield break 提早結束
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 遇到 n = 2，執行 yield break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+路徑 3：消費端取得 1 個元素後 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[消費端] 執行 break，離開 foreach
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+對照 1：手動列舉取得 1 個元素後離開 using
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 手動取得 1
+[消費端] 準備離開 using
+[產生端] finally：釋放資源
+[消費端] 已離開 using
+對照 2：取得列舉器但從未 MoveNext 就離開 using
+[消費端] 已取得列舉器，但不呼叫 MoveNext
+[消費端] 已離開 using
+```
+
+`06-answer` 固定輸出：
+
+```text
+練習 A：stopAt = 3，消費端在 4 才 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[產生端] 從產出 2 之後繼續
+[產生端] 遇到 n = 3，執行 yield break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+練習 B：stopAt = 3，消費端在 2 就 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[消費端] 達到消費端上限 2，執行 break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
 ```

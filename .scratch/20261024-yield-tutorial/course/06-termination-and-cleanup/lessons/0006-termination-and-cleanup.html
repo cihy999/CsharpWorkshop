@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>06 · 序列如何結束或提前停止？</title><link rel="stylesheet" href="../../01-list-basics/assets/course.css"><script src="../../01-list-basics/assets/quiz.js" defer></script></head>
+<body><main>
+<header><div class="eyebrow">C# WORKSHOP / 06</div><h1>產生端說沒了，還是消費端說夠了？<br>停下時記得關燈。</h1><p>這一課只做一件事：區分「走到方法結尾」「產生端 <code>yield break</code>」與「消費端 <code>break</code>」，並看懂已進入的 <code>finally</code> 清理區塊何時執行。</p><p class="meta">約 12 分鐘 · .NET 10 · 教材草稿 · 來源查證 2026-11-23</p><nav><a href="#producer">開始</a><a href="#predict">預測輸出</a><a href="#change">修改練習</a><a href="../reference/termination-and-cleanup.html">速查表</a><a href="../../05-deferred-execution/lessons/0005-deferred-execution.html">上一課</a></nav></header>
+<section id="producer"><h2>01 / 產生端怎麼結束：走到結尾 vs yield break</h2><p>我們直接讀一個完整的迭代器方法（<code>try</code>／<code>finally</code> 語法由教材提供，不必自己默寫）。把需要配對收尾的工作放在 <code>try</code>，收尾動作放在 <code>finally</code>：</p>
+<pre><code>private static IEnumerable&lt;int&gt; ReadNumbers(int stopAt)
+{
+    try
+    {
+        Console.WriteLine("[產生端] 開啟資源（進入 try）");
+
+        for (int n = 1; n &lt;= 3; n++)
+        {
+            if (n == stopAt)
+            {
+                Console.WriteLine("[產生端] 遇到 n = " + n + "，執行 yield break");
+                yield break;
+            }
+
+            Console.WriteLine("[產生端] 產出 " + n);
+            yield return n;
+            Console.WriteLine("[產生端] 從產出 " + n + " 之後繼續");
+        }
+
+        Console.WriteLine("[產生端] 迴圈正常走完");
+    }
+    finally
+    {
+        Console.WriteLine("[產生端] finally：釋放資源");
+    }
+
+    Console.WriteLine("[產生端] 走到方法結尾");
+}</code></pre>
+<p>先注意一個關鍵細節：在 <code>try</code> 裡面遇到 <code>yield return n;</code> 時，方法只是<strong>暫停</strong>，<code>finally</code> <strong>還不會執行</strong>——否則剛拿到第 1 個值，資源就被關掉了。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151552-advance-the-enumerator">C# 規格：yield return 暫停時不執行 finally</a></p>
+<p>由產生端自己結束序列有兩種方式：</p>
+<table><thead><tr><th>產生端路徑</th><th>發生什麼事</th><th>會不會印「走到方法結尾」？</th></tr></thead><tbody><tr><td>自然走完（<code>stopAt = 0</code>）</td><td>1、2、3 都產出後，第 4 次 <code>MoveNext()</code> 離開 <code>try</code>、執行 <code>finally</code>，再走到方法結尾回傳 False</td><td>會</td></tr><tr><td>提早結束（<code>stopAt = 2</code>）</td><td>產出 1 後，第 2 次 <code>MoveNext()</code> 遇到 <code>yield break</code>，先執行已進入 <code>try</code> 的 <code>finally</code>，直接回傳 False</td><td>不會</td></tr></tbody></table>
+<p>別把產生端裡的 <code>yield break</code> 和一般 <code>break</code> 混為一談：如果在上面的 <code>for</code> 迴圈寫一般 <code>break</code>，只是跳出 <code>for</code> 迴圈，還會繼續印出「迴圈正常走完」與「走到方法結尾」；<code>yield break</code> 則是直接結束整個迭代器序列。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/iterators#end-the-sequence-with-yield-break">官方：以 yield break 結束序列</a> · <a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/jump-statements#the-break-statement">官方：一般 break</a></p>
+<form data-answer="c" data-feedback="yield break 會先執行目前已進入 try 區塊對應的 finally，接著讓 MoveNext() 回傳 False；後面剩餘的一般程式都不會執行。"><fieldset><legend>產生端在 try 裡執行 yield break 時，接著會發生什麼？</legend><label><input type="radio" name="yb" value="a">繼續跑完後面程式</label><label><input type="radio" name="yb" value="b">直接跳過清理區塊</label><label><input type="radio" name="yb" value="c">執行清理然後結束</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+<p class="callout">語法限制：<code>yield return</code> 與 <code>yield break</code> 可以寫在「只有 <code>finally</code>、沒有 <code>catch</code>」的 <code>try</code> 區塊中；<code>finally</code> 區塊本身裡面不能寫 <code>yield return</code> 或 <code>yield break</code>。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield">官方：yield 的限制與 using</a></p>
+</section>
+<section id="consumer"><h2>02 / 消費端怎麼停下：foreach 裡的 break</h2><p>換成消費端決定只拿 1 個就不讀了（<code>stopAt = 0</code>，產生端原本準備提供 1、2、3）：</p>
+<pre><code>foreach (int number in ReadNumbers(0))
+{
+    Console.WriteLine("[消費端] 取得 " + number);
+    if (number == 1)
+    {
+        Console.WriteLine("[消費端] 執行 break，離開 foreach");
+        break;
+    }
+}
+Console.WriteLine("[消費端] foreach 結束");</code></pre>
+<p>實測輸出：</p>
+<pre>[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[消費端] 執行 break，離開 foreach
+[產生端] finally：釋放資源
+[消費端] foreach 結束</pre>
+<p>對照這六行，看清楚兩件事：</p>
+<ul><li><strong>剩餘的一般程式不會執行</strong>：沒有人再呼叫第 2 次 <code>MoveNext()</code>，所以「從產出 1 之後繼續」「產出 2」「迴圈正常走完」「走到方法結尾」全部不出現。</li><li><strong>已進入的 <code>finally</code> 仍會執行</strong>：當時列舉器正暫停在 <code>try</code> 區塊裡的 <code>yield return 1</code>，離開 <code>foreach</code> 時會執行這個 <code>try</code> 對應的 <code>finally</code>。</li></ul>
+<form data-answer="a" data-feedback="消費端 break 會離開 foreach 並呼叫列舉器的 Dispose()；若當時暫停在 try 內，只執行對應的 finally，不會繼續執行後面的一般程式。"><fieldset><legend>消費端在 foreach 裡執行 break 後，迭代器主體會？</legend><label><input type="radio" name="cb" value="a">只執行已進入的清理</label><label><input type="radio" name="cb" value="b">把剩餘元素全部算完</label><label><input type="radio" name="cb" value="c">繼續走到方法的結尾</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="dispose"><h2>03 / 誰觸發了 finally？沒開始列舉又會怎樣？</h2><p>為什麼消費端只寫了 <code>break</code>，產生端的 <code>finally</code> 卻知道要執行？回到單元 3：<code>foreach</code> 在語意上會把迴圈包進 <code>try</code>／<code>finally</code>，無論正常走完、中途 <code>break</code> 或發生例外，離開 <code>foreach</code> 時都會呼叫列舉器的 <code>Dispose()</code>。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#13952-synchronous-foreach">C# 規格：foreach 的收尾</a></p>
+<p>如果不用 <code>foreach</code>，改用手動呼叫 <code>GetEnumerator()</code>，就沒有 <code>foreach</code> 幫忙收尾，必須由呼叫者自己用 <code>using</code>（或手動呼叫 <code>Dispose()</code>）負責。完整示範的兩個對照把這件事攤開來看：</p>
+<pre><code>// 對照 1：取得 1 個元素後離開 using
+using (IEnumerator&lt;int&gt; enumerator = ReadNumbers(0).GetEnumerator())
+{
+    if (enumerator.MoveNext())
+    {
+        Console.WriteLine("[消費端] 手動取得 " + enumerator.Current);
+    }
+    Console.WriteLine("[消費端] 準備離開 using");
+}
+Console.WriteLine("[消費端] 已離開 using");
+
+// 對照 2：取得列舉器，但從未呼叫 MoveNext 就離開 using
+using (IEnumerator&lt;int&gt; enumerator = ReadNumbers(0).GetEnumerator())
+{
+    Console.WriteLine("[消費端] 已取得列舉器，但不呼叫 MoveNext");
+}
+Console.WriteLine("[消費端] 已離開 using");</code></pre>
+<table><thead><tr><th>離開 <code>using</code>（呼叫 <code>Dispose()</code>）時的狀態</th><th><code>Dispose()</code> 做的事</th></tr></thead><tbody><tr><td>尚未開始（沒呼叫過 <code>MoveNext()</code>）</td><td>主體還沒執行、沒進入 <code>try</code>，<strong>不執行</strong>主體的 <code>finally</code></td></tr><tr><td>暫停在 <code>try</code> 內的 <code>yield return</code></td><td>執行該 <code>try</code> 對應的 <code>finally</code>，不跑剩餘一般程式</td></tr><tr><td>已經結束（走到底或已 <code>yield break</code>）</td><td>先前結束時已清理過，不再重複執行 <code>finally</code></td></tr></tbody></table>
+<p>對照 2 接上了單元 5 的延遲執行：從未呼叫 <code>MoveNext()</code> 時，連「開啟資源（進入 try）」都沒發生，自然不會執行那個 <code>try</code> 的 <code>finally</code>。<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151554-dispose-of-resources">C# 規格：Dispose 的行為</a></p>
+<form data-answer="b" data-feedback="還沒呼叫過 MoveNext() 時，迭代器主體一行都沒跑，還沒進入 try 區塊；此時 Dispose() 只把列舉器標為結束，不會執行主體內的 finally。"><fieldset><legend>取得列舉器但從未呼叫 MoveNext() 就離開 using，主體的 finally 會？</legend><label><input type="radio" name="never" value="a">在離開時執行一次</label><label><input type="radio" name="never" value="b">不會執行任何清理</label><label><input type="radio" name="never" value="c">連同主體一起跑完</label><button type="submit">核對</button><p role="status" class="feedback"></p></fieldset></form>
+</section>
+<section id="predict"><h2>04 / 預測三種結束路徑</h2><p>下面的短版 <code>Items(stopAt)</code> 最多產出 1、2。三個 <code>foreach</code> 依序對應「正常結束」「產生端 <code>yield break</code>」「消費端 <code>break</code>」。先寫下全部輸出，再按核對。</p>
+<pre><code>static IEnumerable&lt;int&gt; Items(int stopAt)
+{
+    try
+    {
+        Console.WriteLine("Open");
+        for (int n = 1; n &lt;= 2; n++)
+        {
+            if (n == stopAt)
+            {
+                yield break;
+            }
+            yield return n;
+        }
+        Console.WriteLine("Done");
+    }
+    finally
+    {
+        Console.WriteLine("Clean");
+    }
+    Console.WriteLine("After");
+}
+
+foreach (int x in Items(0))
+{
+    Console.WriteLine("A" + x);
+}
+
+foreach (int x in Items(2))
+{
+    Console.WriteLine("B" + x);
+}
+
+foreach (int x in Items(0))
+{
+    Console.WriteLine("C" + x);
+    break;
+}</code></pre>
+<form data-expected="Open A1 A2 Done Clean After Open B1 Clean Open C1 Clean" data-feedback="第一段走完迴圈印出 Done、Clean、After；第二段遇到 yield break，第三段消費端 break 觸發 Dispose()，兩者都只執行已進入的 Clean，不會印 Done 或 After。"><label for="prediction">依序輸入每一行輸出（可分三行寫，或用空格、逗號分隔；大小寫不拘）。</label><textarea id="prediction" spellcheck="false"></textarea><button type="submit">核對預測</button><p role="status" class="feedback"></p></form>
+<noscript><p>互動回饋需要 JavaScript。你也可以在紙上作答，再展開下方解答。</p></noscript>
+<details><summary>預測題解答與原因</summary><pre>Open
+A1
+A2
+Done
+Clean
+After
+Open
+B1
+Clean
+Open
+C1
+Clean</pre><p>第一段完整走訪：<code>A1</code>、<code>A2</code> 暫停期間都不會先跑 <code>Clean</code>；第 3 次要求時離開 <code>for</code> 印出 <code>Done</code>，離開 <code>try</code> 印出 <code>Clean</code>，再執行外面的 <code>After</code>，之後 <code>foreach</code> 收尾呼叫 <code>Dispose()</code> 不會再跑第二次 <code>Clean</code>。第二段在第 2 次要求遇到 <code>yield break</code>，執行 <code>Clean</code> 後直接結束，沒有 <code>Done</code> 與 <code>After</code>。第三段拿到 <code>C1</code> 後由消費端 <code>break</code>，<code>foreach</code> 收尾呼叫 <code>Dispose()</code> 執行 <code>Clean</code>，同樣沒有 <code>Done</code> 與 <code>After</code>。這段程式於 2026-11-23 以 .NET 10 在暫存專案實測。</p></details>
+<h3>執行真正的 C# 範例</h3><p>在 <code>.scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial</code> 資料夾的終端機執行：</p><pre><code>dotnet run -- 06</code></pre><p>完整示範依序執行路徑 1～3 與對照 1～2。請特別比對路徑 2 與路徑 3：兩者都只拿到 <code>1</code>、也都印出 <code>finally：釋放資源</code>，但「從產出 1 之後繼續」只出現在哪一條路徑？為什麼？<a href="../../01-list-basics/YieldTutorial/README.md">完整輸出與 repo 根目錄執行指令</a></p>
+</section>
+<section id="change"><h2>05 / 修改結束條件，看誰先停下</h2><p>目標：不用重寫 <code>try</code>／<code>finally</code>，直接沿用 <code>TerminationAndCleanup.cs</code> 裡的 <code>ReadNumbers(stopAt)</code>，比較產生端與消費端同時設有結束條件時誰先觸發。</p><ol><li>在 <code>TerminationAndCleanup.cs</code> 新增方法 <code>ConsumeWithBreakExercise(int stopAt, int consumerBreakAt)</code>：用 <code>foreach</code> 列舉 <code>ReadNumbers(stopAt)</code>，每次印出 <code>"[消費端] 取得 " + number</code>；當 <code>number == consumerBreakAt</code> 時，印出 <code>"[消費端] 達到消費端上限 " + consumerBreakAt + "，執行 break"</code> 並 <code>break</code>；迴圈後印出 <code>"[消費端] foreach 結束"</code>。</li><li>新增 <code>RunExercise()</code> 依序呼叫兩次：練習 A 呼叫 <code>ConsumeWithBreakExercise(3, 4)</code>，練習 B 呼叫 <code>ConsumeWithBreakExercise(3, 2)</code>。</li><li>要執行時，可暫時在 <code>Program.cs</code> 加一個選項（例如 <code>06-exercise</code>），練習後再還原。</li></ol><p>先預測：練習 A 與練習 B 各自拿到哪些數字？<code>finally</code> 各執行幾次？<code>"[產生端] 從產出 2 之後繼續"</code> 與 <code>"[產生端] 遇到 n = 3，執行 yield break"</code> 在哪一段會出現、哪一段不會出現？</p>
+<details><summary>修改題參考解</summary><pre><code>public static void RunExerciseAnswer()
+{
+    Console.WriteLine("練習 A：stopAt = 3，消費端在 4 才 break");
+    ConsumeWithBreak(3, 4);
+
+    Console.WriteLine("練習 B：stopAt = 3，消費端在 2 就 break");
+    ConsumeWithBreak(3, 2);
+}
+
+private static void ConsumeWithBreak(int stopAt, int consumerBreakAt)
+{
+    foreach (int number in ReadNumbers(stopAt))
+    {
+        Console.WriteLine("[消費端] 取得 " + number);
+        if (number == consumerBreakAt)
+        {
+            Console.WriteLine("[消費端] 達到消費端上限 " + consumerBreakAt + "，執行 break");
+            break;
+        }
+    }
+    Console.WriteLine("[消費端] foreach 結束");
+}</code></pre><p>實測輸出：</p><pre>練習 A：stopAt = 3，消費端在 4 才 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[產生端] 從產出 2 之後繼續
+[產生端] 遇到 n = 3，執行 yield break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+練習 B：stopAt = 3，消費端在 2 就 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[消費端] 達到消費端上限 2，執行 break
+[產生端] finally：釋放資源
+[消費端] foreach 結束</pre><p>兩段拿到的數字都是 <code>1</code>、<code>2</code>，也都各執行一次 <code>finally</code>，但停下的原因不同：練習 A 消費端還想要第 3 個，產生端繼續執行到 <code>n == 3</code> 時用 <code>yield break</code> 結束序列；練習 B 消費端拿到 <code>2</code> 就 <code>break</code>，根本沒有第 3 次 <code>MoveNext()</code>，所以不會看到「從產出 2 之後繼續」與「遇到 n = 3」，而是由 <code>foreach</code> 收尾呼叫 <code>Dispose()</code> 觸發 <code>finally</code>。專案另附獨立解答：<code>dotnet run -- 06-answer</code>。</p></details>
+<h3>合上教材，用自己的話說</h3><p>回答兩題。你可以把解釋貼回聊天，我會依你的說法補充。</p><ol><li>比較產生端的 <code>yield break</code> 與消費端 <code>foreach</code> 裡的 <code>break</code>：各自寫在哪裡、負責結束什麼？消費端 <code>break</code> 之後，迭代器裡還沒跑完的一般程式會繼續執行嗎？</li><li>消費端在 <code>foreach</code> 中途 <code>break</code> 時沒有手寫 <code>Dispose()</code>，為什麼產生端已進入的 <code>finally</code> 仍會執行？如果改用手動呼叫 <code>GetEnumerator()</code> 列舉，或是取得了列舉器卻從未呼叫 <code>MoveNext()</code>，這兩點會有什麼不同？</li></ol>
+<details><summary>解釋題判準</summary><p>能說出四點即可：第一，<code>yield break</code> 寫在迭代器方法（產生端）內，用來提早結束整個序列，讓當次 <code>MoveNext()</code> 回傳 False；消費端的 <code>break</code> 寫在 <code>foreach</code> 迴圈內，用來停止消費端自己的迴圈、不再索取下一個元素。第二，消費端 <code>break</code> 不會讓迭代器繼續執行剩餘的一般程式，只會處理已進入區塊的清理。第三，<code>foreach</code> 語意上帶有外圍 <code>finally</code>，離開迴圈時會自動呼叫列舉器的 <code>Dispose()</code>，進而觸發產生端目前已進入 <code>try</code> 對應的 <code>finally</code>；若是手動呼叫 <code>GetEnumerator()</code>，沒有 <code>foreach</code> 代勞，必須由使用者自己用 <code>using</code>（或手動呼叫 <code>Dispose()</code>）負責清理。第四，若取得列舉器後從未呼叫 <code>MoveNext()</code>，主體根本還沒開始、也還沒進入 <code>try</code>，此時 <code>Dispose()</code> 不會執行主體內的 <code>finally</code>。</p></details>
+<p class="callout">稍後或隔天，看著本頁第 4 節的 <code>Items(stopAt)</code>，在紙上另外推演兩種呼叫：<code>Items(1)</code> 用 <code>foreach</code> 走訪，以及只寫 <code>using (var e = Items(0).GetEnumerator()) { }</code>。先寫出每一行輸出（或確認無輸出），再對照速查表。</p>
+</section>
+<footer><p>主要閱讀：<a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#using-statements-in-iterators">Microsoft Learn：yield 陳述式的 using statements in iterators</a>，觀察迭代器裡的 <code>using</code>（編譯為 <code>try</code>／<code>finally</code>）在呼叫端 <code>break</code> 時如何釋放資源。</p><p>邊界：同一序列再次列舉與資料變動在單元 7；何時改用 <code>List&lt;T&gt;</code> 或 <code>ToList()</code> 在單元 8。本課不涵蓋非同步串流 <code>IAsyncEnumerable&lt;T&gt;</code>，也不依賴編譯器產生的狀態機欄位。</p><nav><a href="../reference/termination-and-cleanup.html">結束與清理速查</a><a href="../../01-list-basics/yield筆記.md#unit-06">完整 Markdown 草稿</a><a href="../../05-deferred-execution/lessons/0005-deferred-execution.html">上一課：何時真正執行</a></nav><p>任何一行不清楚，都可以回聊天問我。此頁的練習只顯示當下回饋，重新整理即清除。</p></footer>
+</main></body></html>

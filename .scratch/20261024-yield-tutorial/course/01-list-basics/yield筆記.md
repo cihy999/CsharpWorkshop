@@ -1,8 +1,8 @@
 # 從 List 到 yield
 
-開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)，第四單元見 [單元 4](#unit-04)，第五單元見 [單元 5](#unit-05)。本文件保留完整草稿與原始素材。
+開始上課請開啟 [HTML 短課程](lessons/0001-list-basics.html)，先預測再核對；複習可看 [List 基礎速查](reference/list-basics.html)。第二單元見 [單元 2](#unit-02)，第三單元見 [單元 3](#unit-03)，第四單元見 [單元 4](#unit-04)，第五單元見 [單元 5](#unit-05)，第六單元見 [單元 6](#unit-06)。本文件保留完整草稿與原始素材。
 
-本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收；Ticket 04 已於 2026-11-21 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至四單元；後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
+本文件為暫存課程教材，Ticket 01 已於 2026-10-24 完成教材驗收；Ticket 02 已於 2026-11-07 完成教材驗收；Ticket 03 已於 2026-11-07 完成教材驗收；Ticket 04 已於 2026-11-21 完成教材驗收；Ticket 05 已於 2026-11-21 完成教材驗收。課程內容先集中於此暫存工作區，整套課程完成後由 Ticket 10 統一歸檔。主線由整數集合開始，再逐步銜接列舉與 yield。現已備妥第一至六單元；第六單元進行中，後續單元尚待編寫。原有回合事實說明保留於文末，供後續整理。
 
 範例專案：[YieldTutorial](YieldTutorial/)。
 
@@ -1187,6 +1187,284 @@ dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/Yiel
 - 每次呼叫 `Steps()` 都得到新的序列；同一個序列再次列舉時主體會不會重跑，留到單元 7。
 - C# 規格只描述可列舉物件與列舉器的外部行為，未規定實作方式。本單元只觀察公開行為（輸出順序、`MoveNext()` 的回傳值與 `Current`），不依賴編譯器產生的型別、欄位或反編譯結果。[C# 規格：列舉器物件](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#15155-enumerator-objects)。
 - 回到原案例：`EnumerateRoundFacts(round)` 被呼叫時還沒檢查任何條件；`foreach` 第一次要求元素時，才開始判斷勝負。若消費端只取第一個事實就停下，後面的條件也不會被檢查。完整案例在單元 9 整理。
+
+[下一單元](#unit-06)接著看：序列怎麼結束、消費端中途停止時哪些程式不跑，以及已進入的清理區段如何執行。
+
+<a id="unit-06"></a>
+
+## 單元 6：序列如何結束或提前停止？
+
+開始上課請開啟 [第六單元 HTML 短課程](../06-termination-and-cleanup/lessons/0006-termination-and-cleanup.html)；複習可看 [序列結束、提前停止與清理速查](../06-termination-and-cleanup/reference/termination-and-cleanup.html)。
+
+適用版本：本單元以 .NET 10 驗證（SDK 11.0.100 建置 `net10.0`，於 .NET Runtime 10.0.15 執行）。驗證日期：2026-11-23。
+
+### 簡短說明
+
+單元 5 觀察過「只要求部分元素時，暫停處之後的程式不會執行」；單元 3 也提過 `foreach` 離開時會呼叫列舉器的 `Dispose()`。本單元把序列停下來的三條路徑放在一起比較，並用完整的 `try`／`finally` 示範觀察清理何時發生（`try`／`finally` 語法直接提供，不要求自行默寫）：
+
+| 路徑 | 誰決定停下 | 剩餘的一般程式 | 已進入 `try` 對應的 `finally` |
+|---|---|---|---|
+| 走到方法結尾 | 產生端（自然耗盡） | 在結尾前已依序執行完 | 離開 `try` 時執行一次 |
+| `yield break` | 產生端（提早結束序列） | 不執行（含 `finally` 之後的程式） | `MoveNext()` 回傳 `False` 前執行一次 |
+| `foreach` 內 `break` | 消費端（不再要求元素） | 不執行 | `foreach` 收尾呼叫 `Dispose()` 時執行一次 |
+
+三個關鍵規則需要分開記清楚：
+
+1. **在 `try` 裡遇到 `yield return` 時，當下不執行 `finally`**。迭代器只是暫停並保留狀態，否則消費端才拿到第一個元素，資源就被關掉了。[C# 規格：MoveNext 遇到 yield return 與 yield break](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151552-advance-the-enumerator)。
+2. **區分三種 `break`**：寫在迭代器內的 `yield break` 會直接結束整個序列；寫在迭代器內部 `for`／`while` 的一般 `break` 只跳出該內部迴圈，方法仍會往下執行；寫在消費端 `foreach` 內的一般 `break` 則是結束消費端自己的迴圈，並由 `foreach` 隱藏的外圍 `finally` 對列舉器呼叫 `Dispose()`。[官方：以 yield break 結束序列](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/iterators#end-the-sequence-with-yield-break)、[官方：一般 break](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/jump-statements#the-break-statement)、[C# 規格：foreach 的收尾](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/statements#13952-synchronous-foreach)。
+3. **`Dispose()` 只清理已進入的區段，不會跑完剩餘一般程式，也不會清理從未進入的 `try`**：若列舉器正暫停在某個 `try` 內，`Dispose()` 就像在該暫停點執行 `yield break` 一樣，只執行包圍它的 `finally`；若從未呼叫過 `MoveNext()`（主體根本還沒開始、未進入 `try`），`Dispose()` 不會執行主體內的 `finally`；若序列早已結束，`Dispose()` 不會讓 `finally` 重複執行。[C# 規格：Dispose 的行為](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/classes#151554-dispose-of-resources)、[官方：迭代器中的 using 與清理](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#using-statements-in-iterators)。
+
+### 範例
+
+以下是 [TerminationAndCleanup.cs](YieldTutorial/TerminationAndCleanup.cs) 中的產生端 `ReadNumbers(int stopAt)`。注意最後一行 `"[產生端] 走到方法結尾"` 刻意放在 `finally` 區塊**之後**：
+
+```csharp
+private static IEnumerable<int> ReadNumbers(int stopAt)
+{
+    try
+    {
+        Console.WriteLine("[產生端] 開啟資源（進入 try）");
+
+        for (int n = 1; n <= 3; n++)
+        {
+            if (n == stopAt)
+            {
+                Console.WriteLine("[產生端] 遇到 n = " + n + "，執行 yield break");
+                yield break;
+            }
+
+            Console.WriteLine("[產生端] 產出 " + n);
+            yield return n;
+            Console.WriteLine("[產生端] 從產出 " + n + " 之後繼續");
+        }
+
+        Console.WriteLine("[產生端] 迴圈正常走完");
+    }
+    finally
+    {
+        Console.WriteLine("[產生端] finally：釋放資源");
+    }
+
+    Console.WriteLine("[產生端] 走到方法結尾");
+}
+```
+
+`Run()` 依序執行三條 `foreach` 路徑，再補上兩段手動列舉（`using`）的對照：
+
+```csharp
+Console.WriteLine("路徑 1：正常走到方法結尾");
+foreach (int number in ReadNumbers(0))
+{
+    Console.WriteLine("[消費端] 取得 " + number);
+}
+Console.WriteLine("[消費端] foreach 結束");
+
+Console.WriteLine("路徑 2：產生端 yield break 提早結束");
+foreach (int number in ReadNumbers(2))
+{
+    Console.WriteLine("[消費端] 取得 " + number);
+}
+Console.WriteLine("[消費端] foreach 結束");
+
+Console.WriteLine("路徑 3：消費端取得 1 個元素後 break");
+foreach (int number in ReadNumbers(0))
+{
+    Console.WriteLine("[消費端] 取得 " + number);
+    if (number == 1)
+    {
+        Console.WriteLine("[消費端] 執行 break，離開 foreach");
+        break;
+    }
+}
+Console.WriteLine("[消費端] foreach 結束");
+
+Console.WriteLine("對照 1：手動列舉取得 1 個元素後離開 using");
+using (IEnumerator<int> enumerator = ReadNumbers(0).GetEnumerator())
+{
+    if (enumerator.MoveNext())
+    {
+        Console.WriteLine("[消費端] 手動取得 " + enumerator.Current);
+    }
+    Console.WriteLine("[消費端] 準備離開 using");
+}
+Console.WriteLine("[消費端] 已離開 using");
+
+Console.WriteLine("對照 2：取得列舉器但從未 MoveNext 就離開 using");
+using (IEnumerator<int> enumerator = ReadNumbers(0).GetEnumerator())
+{
+    Console.WriteLine("[消費端] 已取得列舉器，但不呼叫 MoveNext");
+}
+Console.WriteLine("[消費端] 已離開 using");
+```
+
+### 預測輸出
+
+先不執行程式，寫下你的預測：
+
+1. 路徑 1、路徑 2、路徑 3 各自會讓消費端取得哪些數字？哪一條路徑會印出 `"[產生端] 走到方法結尾"`？
+2. 路徑 2 與路徑 3 都只取得 `1`，`"[產生端] 從產出 1 之後繼續"` 在哪一條路徑會出現、哪一條不會？
+3. 路徑 1～3 中，`"[產生端] finally：釋放資源"` 各自執行幾次？在路徑 1 中，每次 `yield return` 暫停時會不會先印出 `finally`？
+4. 對照 1 中，`"[產生端] finally：釋放資源"` 出現在 `"[消費端] 準備離開 using"` 之前還是之後？
+5. 對照 2 中，會出現任何 `[產生端]` 輸出（包含 `finally`）嗎？為什麼？
+
+### 執行觀察
+
+從 repo 根目錄執行：
+
+```powershell
+dotnet build .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial/YieldTutorial.csproj
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 06
+```
+
+觀察四件事：路徑 1 在所有元素產出後才執行一次 `finally` 並走到方法結尾；路徑 2 與路徑 3 都不會執行剩餘的一般程式，但都執行了一次 `finally`；對照 1 的 `finally` 正好夾在「準備離開 using」與「已離開 using」之間；對照 2 完全沒有 `[產生端]` 輸出。
+
+### 修改練習
+
+不用重寫 `try`／`finally`，直接沿用 `TerminationAndCleanup.cs` 已提供的 `ReadNumbers(int stopAt)`，比較產生端與消費端同時設有結束條件時誰先停下：
+
+1. 在 `TerminationAndCleanup.cs` 新增輔助方法 `ConsumeWithBreakExercise(int stopAt, int consumerBreakAt)`：用 `foreach` 列舉 `ReadNumbers(stopAt)`，每次印出 `"[消費端] 取得 " + number`；當 `number == consumerBreakAt` 時，印出 `"[消費端] 達到消費端上限 " + consumerBreakAt + "，執行 break"` 並 `break`；迴圈結束後印出 `"[消費端] foreach 結束"`。
+2. 新增 `RunExercise()`，依序執行兩段：
+   - 練習 A：呼叫 `ConsumeWithBreakExercise(3, 4)`（產生端在 `3` 執行 `yield break`，消費端在 `4` 才 `break`）。
+   - 練習 B：呼叫 `ConsumeWithBreakExercise(3, 2)`（產生端仍在 `3` 執行 `yield break`，消費端改成在 `2` 就 `break`）。
+
+先預測：練習 A 與練習 B 各自取得哪些數字、`finally` 各執行幾次，以及 `"[產生端] 從產出 2 之後繼續"` 與 `"[產生端] 遇到 n = 3，執行 yield break"` 在哪一段會出現、哪一段不會出現。要執行時，可暫時在 `Program.cs` 加一個選項（例如 `06-exercise`），練習後再還原。
+
+解釋題：
+
+1. 比較產生端的 `yield break` 與消費端 `foreach` 裡的 `break`：各自寫在哪裡、負責結束什麼？消費端 `break` 之後，迭代器裡還沒跑完的一般程式會繼續執行嗎？
+2. 路徑 3 的消費端只寫了 `break`，沒有手寫 `Dispose()`，為什麼產生端已進入的 `finally` 仍會執行？如果改用手動呼叫 `GetEnumerator()` 列舉，或是取得了列舉器卻從未呼叫 `MoveNext()`，這兩點會有什麼不同？
+
+### 解答與判準
+
+#### 預測題解答
+
+`06` 實測輸出如下：
+
+```text
+路徑 1：正常走到方法結尾
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[產生端] 從產出 2 之後繼續
+[產生端] 產出 3
+[消費端] 取得 3
+[產生端] 從產出 3 之後繼續
+[產生端] 迴圈正常走完
+[產生端] finally：釋放資源
+[產生端] 走到方法結尾
+[消費端] foreach 結束
+路徑 2：產生端 yield break 提早結束
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 遇到 n = 2，執行 yield break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+路徑 3：消費端取得 1 個元素後 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[消費端] 執行 break，離開 foreach
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+對照 1：手動列舉取得 1 個元素後離開 using
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 手動取得 1
+[消費端] 準備離開 using
+[產生端] finally：釋放資源
+[消費端] 已離開 using
+對照 2：取得列舉器但從未 MoveNext 就離開 using
+[消費端] 已取得列舉器，但不呼叫 MoveNext
+[消費端] 已離開 using
+```
+
+1. 路徑 1 取得 `1`、`2`、`3`；路徑 2 與路徑 3 都只取得 `1`。只有路徑 1 會印出 `"[產生端] 走到方法結尾"`：路徑 2 被 `yield break` 直接結束序列，路徑 3 則在消費端 `break` 時停止，兩者都不會執行 `finally` 後面的一般程式。
+2. `"[產生端] 從產出 1 之後繼續"` 只在路徑 2 出現：路徑 2 的消費端要求了第 2 個元素，產生端才會從 `yield return 1` 之後繼續並遇到 `n == 2` 的 `yield break`；路徑 3 拿到 `1` 後就 `break`，沒有第 2 次 `MoveNext()`。
+3. 路徑 1～3 的 `finally` 都各執行**一次**。在 `try` 內遇到 `yield return` 時只是暫停，不會在每次交出元素時先跑 `finally`；路徑 1 在第 4 次 `MoveNext()` 離開 `try` 時執行 `finally`，之後 `foreach` 結束呼叫 `Dispose()` 時列舉器已結束，不會再跑第二次。
+4. 對照 1 的 `finally` 出現在 `"[消費端] 準備離開 using"` **之後**、`"[消費端] 已離開 using"` **之前**，因為離開 `using` 大括號時呼叫了 `enumerator.Dispose()`。
+5. 對照 2 沒有任何 `[產生端]` 輸出，也不會印出 `finally`：從未呼叫 `MoveNext()` 時，迭代器主體一行都還沒跑、還沒進入 `try` 區塊，因此 `Dispose()` 不會執行主體內的 `finally`。
+
+#### 修改題參考解
+
+以下是同專案 `RunExerciseAnswer()` 與 `ConsumeWithBreak()` 的內容，可直接以 `06-answer` 選項執行：
+
+```csharp
+public static void RunExerciseAnswer()
+{
+    Console.WriteLine("練習 A：stopAt = 3，消費端在 4 才 break");
+    ConsumeWithBreak(3, 4);
+
+    Console.WriteLine("練習 B：stopAt = 3，消費端在 2 就 break");
+    ConsumeWithBreak(3, 2);
+}
+
+private static void ConsumeWithBreak(int stopAt, int consumerBreakAt)
+{
+    foreach (int number in ReadNumbers(stopAt))
+    {
+        Console.WriteLine("[消費端] 取得 " + number);
+        if (number == consumerBreakAt)
+        {
+            Console.WriteLine("[消費端] 達到消費端上限 " + consumerBreakAt + "，執行 break");
+            break;
+        }
+    }
+    Console.WriteLine("[消費端] foreach 結束");
+}
+```
+
+```powershell
+dotnet run --project .scratch/20261024-yield-tutorial/course/01-list-basics/YieldTutorial -- 06-answer
+```
+
+實測輸出：
+
+```text
+練習 A：stopAt = 3，消費端在 4 才 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[產生端] 從產出 2 之後繼續
+[產生端] 遇到 n = 3，執行 yield break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+練習 B：stopAt = 3，消費端在 2 就 break
+[產生端] 開啟資源（進入 try）
+[產生端] 產出 1
+[消費端] 取得 1
+[產生端] 從產出 1 之後繼續
+[產生端] 產出 2
+[消費端] 取得 2
+[消費端] 達到消費端上限 2，執行 break
+[產生端] finally：釋放資源
+[消費端] foreach 結束
+```
+
+練習 A 與練習 B 取得的數字同樣是 `1`、`2`，`finally` 也都各執行一次，但讓迴圈停下的角色不同：練習 A 的消費端上限是 `4`，所以取得 `2` 後仍發出第 3 次要求，由產生端在 `n == 3` 時執行 `yield break` 結束序列，因此會看到 `"[產生端] 從產出 2 之後繼續"` 與 `"[產生端] 遇到 n = 3，執行 yield break"`；練習 B 的消費端在取得 `2` 時就執行 `break`，沒有第 3 次要求，這兩行產生端標記都不會出現，而是由 `foreach` 收尾呼叫 `Dispose()` 觸發 `finally`。
+
+#### 解釋題判準
+
+能清楚表達以下四點即可，不要求背誦原句：
+
+- **兩種 `break` 的角色**：`yield break` 寫在迭代器方法（產生端）中，用來提早宣告序列沒有後續元素，讓當次 `MoveNext()` 回傳 `False`；消費端的 `break` 寫在 `foreach` 迴圈中，用來跳出消費端自己的迴圈、不再要求下一個元素。
+- **剩餘一般程式不執行**：消費端 `break` 之後不會再呼叫 `MoveNext()`，迭代器中尚未執行的一般程式（無論在 `try` 內或 `finally` 外）都不會繼續執行。
+- **`foreach` 與手動 `Dispose()` 的關係**：`foreach` 在語意上具有外圍 `try`／`finally`，離開迴圈（含正常走完與中途 `break`）時會自動呼叫列舉器的 `Dispose()`，從而執行產生端目前已進入 `try` 區塊的 `finally`；手動呼叫 `GetEnumerator()` 時沒有 `foreach` 代勞，必須由呼叫者以 `using`（或手動呼叫 `Dispose()`）負責清理，否則提前停止時不會觸發該 `finally`。
+- **尚未開始列舉的邊界**：若取得列舉器後從未呼叫過 `MoveNext()`，主體根本尚未開始執行、也尚未進入 `try` 區塊，此時呼叫 `Dispose()` 不會執行主體內的 `finally`。
+
+### 限制與相關概念
+
+- 語法限制：`yield return` 與 `yield break` 可以放在「只有 `finally`、沒有 `catch`」的 `try` 區塊中；`finally` 區塊本身裡面不能寫 `yield return` 或 `yield break`。在迭代器方法內使用 `using` 宣告資源也是合法的，因為 `using` 會編譯為這類不含 `catch` 的 `try`／`finally`。[官方：yield 的使用限制與 using](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield#using-statements-in-iterators)。
+- 若手動呼叫 `GetEnumerator()` 卻既沒有用 `using`、也沒有呼叫 `Dispose()`，中途放棄列舉時，產生端暫停點外圍的 `finally` 就不會被 `Dispose()` 主動執行——這正是單元 3 要求手動列舉一律放進 `using` 的實際原因。
+- 本單元每次 `foreach` 都重新呼叫一次 `ReadNumbers(...)`；把同一個 `IEnumerable<int>` 變數拿來列舉第二次會發生什麼事、輸入在兩次之間改變會如何，留到單元 7。
+- 回到原案例：若消費端只需要確認「這個回合有沒有成立任何一項事實」（例如讀到第一個事實就 `break`），`EnumerateRoundFacts(round)` 在交出第一個事實後就會停下，不會白白檢查後續條件；若產生端遇到某個前提不成立想立刻結束，也可以直接寫 `yield break`。完整案例在單元 9 整理。
 
 ## 原有回合事實筆記（保留原文）
 
